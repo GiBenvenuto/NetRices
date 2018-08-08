@@ -16,7 +16,7 @@ import java.util.StringTokenizer;
 public class AnalisadorLexico {
 
     private Hashtable<String, String> hash;
-    private ArrayList<String> tokens;
+    private ArrayList<Token> tokens;
 
     public AnalisadorLexico() {
         this.hash = new Hashtable();
@@ -44,100 +44,89 @@ public class AnalisadorLexico {
 
     }
 
-    public ArrayList lex(String entrada) {
+    public void lex(String entrada) {
         char caracter;
+        boolean ponto = true;
         String auxTokens = "";
-        tokens = new ArrayList<>();
-
+        tokens = new ArrayList();
+        Token tk;
+        int lin = 1, col = 1;
 //        entrada = removeEspaco(entrada);
         for (int i = 0; i < entrada.length(); i++) {
             caracter = entrada.charAt(i);
 
-            if (this.hash.get(String.valueOf(caracter)) != null) { //Se for um caracter especial
-                tokens.add(caracter + ":" + this.hash.get(String.valueOf(caracter))); //Caracter lido:Token
+            if (this.hash.get(String.valueOf(caracter)) != null || Character.isWhitespace(caracter)) { //Se for um caracter especial
+                //tokens.add(caracter + ":" + this.hash.get(String.valueOf(caracter))); //Caracter lido:Token
+                if (!auxTokens.equals("")) {
+                    tk = analisaLexema(auxTokens);
+                    tokens.add(tk);
+                    auxTokens = "";
+                    ponto = true;
+                }
+                if (!Character.isWhitespace(caracter)) {
+                    tk = analisaLexema(Character.toString(caracter));
+                    tokens.add(tk); //Numero real:Token
+                }
+                // Analisar o novo char
 
             } else {//Verificar se é um numero real ou natural
                 if (Character.isDigit(caracter)) {
-
-                    while (Character.isDigit(caracter)) {
-                        auxTokens += caracter;
-                        i++;
-                        if (i < entrada.length()) {
-                            caracter = entrada.charAt(i);
-                        } else {
-                            break;
-                        }//end else
-                    }//end while
-
-                    if (caracter != '.' || i > entrada.length()) {
-                        tokens.add(auxTokens + ":" + "NUM_NAT"); //Numero natural:Token
-                        auxTokens = "";
-                        i--;
-
-                    } else {
-                        i++;
-                        if (i < entrada.length()) {
-                            caracter = entrada.charAt(i);
-                            if (Character.isDigit(caracter)) {
-                                auxTokens += "." + caracter;
-                                i++;
-                                
-                                if (i < entrada.length()) {
-                                    caracter = entrada.charAt(i);
-                                    while (Character.isDigit(caracter)) {
-                                        auxTokens += caracter;
-                                        i++;
-                                        if (i < entrada.length()) {
-                                            caracter = entrada.charAt(i);
-                                        } else {
-                                            break;
-                                        }//end else
-                                    }//end while
-                                }
-
-                                tokens.add(auxTokens + ":" + "NUM_REAL"); //Numero real:Token
-                                auxTokens = "";
-                                i--;
-
-                            }//end num real
-                            else {//volta
-                                tokens.add(auxTokens + ":" + "NUM_NAT"); //Numero natural:Token
-                                auxTokens = "";
-                                i -= 2;
-                            }
-                        }//end if tam entrada
-                        else {
-                            tokens.add("." + ":" + "ERRO - CARACTERE DESCONHECIDO"); //Numero real:Token
-                            auxTokens = "";
-                        }
-                    }//end else real
+                    auxTokens += caracter;
                 }//end else trata numero
                 else {
-                    if (!isEspaco(caracter)) {
-                        tokens.add(caracter + ":" + "ERRO - CARACTERE DESCONHECIDO"); //Numero real:Token
-                        auxTokens = "";
+                    //verificar se é ponto
+                    if (caracter == '.' && ponto) {
+                        auxTokens += caracter;
+                        ponto = false;
+                    } else {
+                        if (!auxTokens.equals("")) {
+                            tk = analisaLexema(auxTokens);
+                            tokens.add(tk);
+                            auxTokens = "";
+                            ponto = true;
+                        }
+                        tk = analisaLexema(Character.toString(caracter));
+                        tokens.add(tk);
                     }
 
                 }
             }
+            col++;
+        }
+        if (!auxTokens.equals("")) {
+            tk = analisaLexema(auxTokens);
+            tokens.add(tk);
         }
 
-        return tokens;
     }
 
     public String[][] toInterface(String entrada) {
-        ArrayList<String> tokens = lex(entrada);
         String[][] arrayTokens = new String[tokens.size()][2];
         StringTokenizer st;
         int i = 0;
-        for (String at : tokens) {
-            st = new StringTokenizer(at, ":");
-            arrayTokens[i][0] = st.nextToken();
-            arrayTokens[i][1] = st.nextToken();
+        for (Token at : tokens) {
+            arrayTokens[i][0] = at.getLexema();
+            arrayTokens[i][1] = at.getToken();
             i++;
         }
 
         return arrayTokens;
     }
 
+    private Token analisaLexema(String auxTokens) {
+        Token tk = new Token();
+        tk.setLexema(auxTokens);
+
+        if (this.hash.containsKey(auxTokens)) {
+            tk.setToken(this.hash.get(auxTokens));
+        } else if (auxTokens.matches("^([0-9])+$")) {
+            tk.setToken("NUM_NAT");
+        } else if (auxTokens.matches("^([0-9])*.([0-9])+$")) {
+            tk.setToken("NUM_REAL");
+        } else {
+            tk.setToken("ERRO");
+        }
+
+        return tk;
+    }
 }

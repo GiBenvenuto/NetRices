@@ -7,11 +7,20 @@ package UI;
 
 import al_calculadora.AnalisadorLexico;
 import static com.sun.xml.internal.fastinfoset.alphabet.BuiltInRestrictedAlphabets.table;
+import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.scene.control.TableRow;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JTable;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -47,7 +56,7 @@ public class UIPrincipal extends javax.swing.JFrame {
         alTable = new javax.swing.JTable();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
-        jMenuItem1 = new javax.swing.JMenuItem();
+        menu_abrir = new javax.swing.JMenuItem();
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -83,14 +92,14 @@ public class UIPrincipal extends javax.swing.JFrame {
 
             },
             new String [] {
-                "Lexema", "Token"
+                "Lexema", "Token", "Linha", "Coluna"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false
+                false, false, false, false
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -105,8 +114,13 @@ public class UIPrincipal extends javax.swing.JFrame {
 
         jMenu1.setText("Arquivos");
 
-        jMenuItem1.setText("Abrir");
-        jMenu1.add(jMenuItem1);
+        menu_abrir.setText("Abrir");
+        menu_abrir.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                menu_abrirActionPerformed(evt);
+            }
+        });
+        jMenu1.add(menu_abrir);
 
         jMenuBar1.add(jMenu1);
 
@@ -163,6 +177,7 @@ public class UIPrincipal extends javax.swing.JFrame {
         DefaultTableModel model = (DefaultTableModel) this.alTable.getModel();
         String entrada = this.entradaText.getText();
         AnalisadorLexico al = new AnalisadorLexico();
+        al.lex(entrada);
         String[][] saida = al.toInterface(entrada);
         model.setRowCount(saida.length);
         TableCellRenderer tcr = new tableRender();
@@ -174,13 +189,46 @@ public class UIPrincipal extends javax.swing.JFrame {
 //            column.setCellRenderer(tcr);
 //            column = this.alTable.getColumnModel().getColumn(1);
 //            column.setCellRenderer(tcr);
-
             model.setValueAt(saida[i][0], i, 0);
             model.setValueAt(saida[i][1], i, 1);
+            model.setValueAt(saida[i][2], i, 2);
+            model.setValueAt(saida[i][3], i, 3);
 
         }
 
     }//GEN-LAST:event_analisarBtnActionPerformed
+
+    private void menu_abrirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menu_abrirActionPerformed
+        JFileChooser jc = new JFileChooser("D:\\Users\\Gi\\Desktop\\Desktop\\BCC\\8SEMESTRE");
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("txt", "txt");
+        jc.setFileFilter(filter);
+        int result;
+        result = jc.showOpenDialog(null);
+
+
+        if (result == javax.swing.JFileChooser.APPROVE_OPTION) {
+             String filename = jc.getSelectedFile().getAbsolutePath();
+            try {
+                BufferedReader in = new BufferedReader(new FileReader(filename));
+                String entrada, line;
+                entrada = "";
+                line = in.readLine();
+                while(line != null  ){
+                    entrada += line+ (char)13;
+                    line = in.readLine();
+                }
+                
+                this.entradaText.setText(entrada);
+                
+            } catch (FileNotFoundException ex) {
+                Logger.getLogger(UIPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(UIPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+                
+        }
+    }//GEN-LAST:event_menu_abrirActionPerformed
 
     /**
      * @param args the command line arguments
@@ -224,11 +272,11 @@ public class UIPrincipal extends javax.swing.JFrame {
     private javax.swing.JEditorPane entradaText;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenuBar jMenuBar1;
-    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JTable jTable1;
+    private javax.swing.JMenuItem menu_abrir;
     // End of variables declaration//GEN-END:variables
 }
 
@@ -251,8 +299,6 @@ class tableRender extends JLabel implements TableCellRenderer {
         }
         return this;
     }
-
-   
 
     @Override
     public void validate() {

@@ -56,16 +56,18 @@ public class AnalisadorLexico {
             caracter = entrada.charAt(i);
 
             if (this.hash.get(String.valueOf(caracter)) != null || Character.isWhitespace(caracter)) { //Se for um caracter especial
-                //tokens.add(caracter + ":" + this.hash.get(String.valueOf(caracter))); //Caracter lido:Token
                 if (!auxTokens.equals("")) {
-                    tk = analisaLexema(auxTokens);
+                    tk = analisaLexema(auxTokens, lin, col);
                     tokens.add(tk);
                     auxTokens = "";
                     ponto = true;
                 }
                 if (!Character.isWhitespace(caracter)) {
-                    tk = analisaLexema(Character.toString(caracter));
-                    tokens.add(tk); //Numero real:Token
+                    tk = analisaLexema(Character.toString(caracter), lin, col); //Analisa palavras reservdas
+                    tokens.add(tk);
+                }else if(caracter == (char)13){
+                    lin++;
+                    col = 0;
                 }
                 // Analisar o novo char
 
@@ -80,12 +82,12 @@ public class AnalisadorLexico {
                         ponto = false;
                     } else {
                         if (!auxTokens.equals("")) {
-                            tk = analisaLexema(auxTokens);
+                            tk = analisaLexema(auxTokens, lin, col);
                             tokens.add(tk);
                             auxTokens = "";
                             ponto = true;
                         }
-                        tk = analisaLexema(Character.toString(caracter));
+                        tk = analisaLexema(Character.toString(caracter), lin, col);
                         tokens.add(tk);
                     }
 
@@ -94,31 +96,36 @@ public class AnalisadorLexico {
             col++;
         }
         if (!auxTokens.equals("")) {
-            tk = analisaLexema(auxTokens);
+            tk = analisaLexema(auxTokens, lin, col);
             tokens.add(tk);
         }
 
     }
 
     public String[][] toInterface(String entrada) {
-        String[][] arrayTokens = new String[tokens.size()][2];
+        String[][] arrayTokens = new String[tokens.size()][4];
         StringTokenizer st;
         int i = 0;
         for (Token at : tokens) {
             arrayTokens[i][0] = at.getLexema();
             arrayTokens[i][1] = at.getToken();
+            arrayTokens[i][2] = Integer.toString(at.getLin());
+            arrayTokens[i][3] = Integer.toString(at.getCol());
             i++;
         }
 
         return arrayTokens;
     }
 
-    private Token analisaLexema(String auxTokens) {
+    private Token analisaLexema(String auxTokens, int lin, int col) {
         Token tk = new Token();
         tk.setLexema(auxTokens);
+        tk.setLin(lin);
+        tk.setCol(col - auxTokens.length());
 
         if (this.hash.containsKey(auxTokens)) {
             tk.setToken(this.hash.get(auxTokens));
+            tk.setCol(col);
         } else if (auxTokens.matches("^([0-9])+$")) {
             tk.setToken("NUM_NAT");
         } else if (auxTokens.matches("^([0-9])*.([0-9])+$")) {

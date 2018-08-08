@@ -19,6 +19,7 @@ public class AL_Calculadora {
     public static void main(String[] args) {
         // TODO code application logic here
         UIPrincipal iup = new UIPrincipal();
+        System.out.println("");
         iup.setVisible(true);
         
     }

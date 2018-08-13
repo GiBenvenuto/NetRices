@@ -13,7 +13,24 @@ public class Token {
     private String lexema;
     private String token;
     private int lin;
-    private int col;
+    private int colIni;
+    private int colFim;
+
+    public int getColIni() {
+        return colIni;
+    }
+
+    public void setColIni(int colIni) {
+        this.colIni = colIni;
+    }
+
+    public int getColFim() {
+        return colFim;
+    }
+
+    public void setColFim(int colFim) {
+        this.colFim = colFim;
+    }
 
     public String getLexema() {
         return lexema;
@@ -38,14 +55,6 @@ public class Token {
     public void setLin(int lin) {
         this.lin = lin;
     }
-
-    public int getCol() {
-        return col;
-    }
-
-    public void setCol(int col) {
-        this.col = col;
-    }
-    
+   
     
 }

@@ -92,14 +92,14 @@ public class UIPrincipal extends javax.swing.JFrame {
 
             },
             new String [] {
-                "Lexema", "Token", "Linha", "Coluna"
+                "Lexema", "Token", "Linha", "Coluna Inicio", "Coluna Fim"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
             };
             boolean[] canEdit = new boolean [] {
-                false, false, false, false
+                false, false, false, false, false
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -193,6 +193,7 @@ public class UIPrincipal extends javax.swing.JFrame {
             model.setValueAt(saida[i][1], i, 1);
             model.setValueAt(saida[i][2], i, 2);
             model.setValueAt(saida[i][3], i, 3);
+            model.setValueAt(saida[i][4], i, 4);
 
         }
 

@@ -27,6 +27,16 @@ public class AnalisadorLexico {
         this.hash.put("=", "OP_IGUAL");
         this.hash.put("(", "P_ABRE");
         this.hash.put(")", "P_FECHA");
+        this.hash.put("program", "PALAVRA_RESERVADA");
+        this.hash.put("begin", "PALAVRA_RESERVADA");
+        this.hash.put("var", "PALAVRA_RESERVADA");
+        this.hash.put("procedure", "PALAVRA_RESERVADA");
+        this.hash.put("end", "PALAVRA_RESERVADA");
+        this.hash.put("if", "PALAVRA_RESERVADA");
+        this.hash.put("then", "PALAVRA_RESERVADA");
+        this.hash.put("else", "PALAVRA_RESERVADA");
+        this.hash.put("while", "PALAVRA_RESERVADA");
+        this.hash.put("do", "PALAVRA_RESERVADA");
         //    this.hash.put("program", "PR_PROGRAM");
 
     }
@@ -65,14 +75,14 @@ public class AnalisadorLexico {
                 if (!Character.isWhitespace(caracter)) {
                     tk = analisaLexema(Character.toString(caracter), lin, col); //Analisa palavras reservdas
                     tokens.add(tk);
-                }else if(caracter == (char)13){
+                } else if (caracter == (char) 13) {
                     lin++;
                     col = 0;
                 }
                 // Analisar o novo char
 
             } else {//Verificar se é um numero real ou natural
-                if (Character.isDigit(caracter)) {
+                if (Character.isDigit(caracter) || Character.isAlphabetic(caracter) || caracter == '_') {
                     auxTokens += caracter;
                 }//end else trata numero
                 else {
@@ -103,14 +113,15 @@ public class AnalisadorLexico {
     }
 
     public String[][] toInterface(String entrada) {
-        String[][] arrayTokens = new String[tokens.size()][4];
+        String[][] arrayTokens = new String[tokens.size()][5];
         StringTokenizer st;
         int i = 0;
         for (Token at : tokens) {
             arrayTokens[i][0] = at.getLexema();
             arrayTokens[i][1] = at.getToken();
             arrayTokens[i][2] = Integer.toString(at.getLin());
-            arrayTokens[i][3] = Integer.toString(at.getCol());
+            arrayTokens[i][3] = Integer.toString(at.getColIni());
+            arrayTokens[i][4] = Integer.toString(at.getColFim());
             i++;
         }
 
@@ -121,15 +132,19 @@ public class AnalisadorLexico {
         Token tk = new Token();
         tk.setLexema(auxTokens);
         tk.setLin(lin);
-        tk.setCol(col - auxTokens.length());
+        tk.setColIni(col - auxTokens.length());
+        tk.setColFim(col);
+        String letra = "(_|[a-z]|[A-Z])";
 
         if (this.hash.containsKey(auxTokens)) {
             tk.setToken(this.hash.get(auxTokens));
-            tk.setCol(col);
+            //tk.setColIni(col-1);
         } else if (auxTokens.matches("^([0-9])+$")) {
             tk.setToken("NUM_NAT");
-        } else if (auxTokens.matches("^([0-9])*.([0-9])+$")) {
+        } else if (auxTokens.matches("^([0-9])*\\.([0-9])+$")) {
             tk.setToken("NUM_REAL");
+        } else if (auxTokens.matches("^"+letra+"("+letra+"|[0-9])*$")) {
+            tk.setToken("IDENTIFICADOR");
         } else {
             tk.setToken("ERRO");
         }

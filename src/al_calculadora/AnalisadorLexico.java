@@ -23,10 +23,27 @@ public class AnalisadorLexico {
         this.hash.put("+", "OP_SOMA");
         this.hash.put("-", "OP_ SUB");
         this.hash.put("*", "OP_MULT");
-        this.hash.put("/", "OP_DIV");
         this.hash.put("=", "OP_IGUAL");
         this.hash.put("(", "P_ABRE");
         this.hash.put(")", "P_FECHA");
+        this.hash.put(";", "PONTO_VIRGULA");
+        this.hash.put(":=", "ATRIBUICAO");
+        this.hash.put("<", "OP_MENOR");
+        this.hash.put(">", "OP_MAIOR");
+        this.hash.put("<=", "OP_MENOR_IGUAL");
+        this.hash.put(">=", "OP_MAIOR_IGUAL");
+        this.hash.put("<>", "OP_DIFERENTE");
+        this.hash.put("or", "OP_OR");
+        this.hash.put("not", "OP_NOT");
+        this.hash.put("and", "OP_AND");
+        this.hash.put("div", "OP_DIV");
+        this.hash.put(",", "VIRGULA");
+        this.hash.put("true", "ID_CONST"); //Verificar nomenclatura
+        this.hash.put("false", "ID_CONST");
+        this.hash.put("int", "ID_TIPO");
+        this.hash.put("boolean", "ID_TIPO");
+        this.hash.put("read", "ID_PROC");
+        this.hash.put("write", "ID_PROC");
         this.hash.put("program", "PALAVRA_RESERVADA");
         this.hash.put("begin", "PALAVRA_RESERVADA");
         this.hash.put("var", "PALAVRA_RESERVADA");
@@ -60,29 +77,56 @@ public class AnalisadorLexico {
         String auxTokens = "";
         tokens = new ArrayList();
         Token tk;
+        entrada += " ";
         int lin = 1, col = 1;
 //        entrada = removeEspaco(entrada);
         for (int i = 0; i < entrada.length(); i++) {
             caracter = entrada.charAt(i);
 
-            if (this.hash.get(String.valueOf(caracter)) != null || Character.isWhitespace(caracter)) { //Se for um caracter especial
+            if (this.hash.containsKey(String.valueOf(caracter)) || Character.isWhitespace(caracter)) { //Se for um caracter especial
                 if (!auxTokens.equals("")) {
                     tk = analisaLexema(auxTokens, lin, col);
                     tokens.add(tk);
                     auxTokens = "";
                     ponto = true;
                 }
-                if (!Character.isWhitespace(caracter)) {
+
+                if (caracter == '<' && (entrada.charAt(i + 1) == '=' || entrada.charAt(i + 1) == '>')) {
+                    tk = analisaLexema("<" + entrada.charAt(i + 1), lin, ++col + 1);
+                    tokens.add(tk);
+                    i++;
+
+                } else if (caracter == '>' && entrada.charAt(i + 1) == '=') {
+                    tk = analisaLexema(">=", lin, ++col + 1);
+                    tokens.add(tk);
+                    i++;
+
+                } else if (!Character.isWhitespace(caracter)) {
                     tk = analisaLexema(Character.toString(caracter), lin, col); //Analisa palavras reservdas
                     tokens.add(tk);
                 } else if (caracter == (char) 13) {
                     lin++;
-                    col = 0;
+                    col = -1;
                 }
                 // Analisar o novo char
 
             } else {//Verificar se é um numero real ou natural
-                if (Character.isDigit(caracter) || Character.isAlphabetic(caracter) || caracter == '_') {
+                if (caracter == ':') {
+                    if (!auxTokens.equals("")) {
+                        tk = analisaLexema(auxTokens, lin, col);
+                        tokens.add(tk);
+                        auxTokens = "";
+                        ponto = true;
+                    }
+                    if (entrada.charAt(i + 1) == '=') {
+                        tk = analisaLexema(":=", lin, ++col + 1);
+                        tokens.add(tk);
+                        i++;
+                    } else {
+                        tk = analisaLexema(":", lin, col);
+                        tokens.add(tk);
+                    }
+                } else if (Character.isJavaIdentifierPart(caracter)) {
                     auxTokens += caracter;
                 }//end else trata numero
                 else {
@@ -143,10 +187,10 @@ public class AnalisadorLexico {
             tk.setToken("NUM_NAT");
         } else if (auxTokens.matches("^([0-9])*\\.([0-9])+$")) {
             tk.setToken("NUM_REAL");
-        } else if (auxTokens.matches("^"+letra+"("+letra+"|[0-9])*$")) {
+        } else if (auxTokens.matches("^" + letra + "(" + letra + "|[0-9])*$")) {
             tk.setToken("IDENTIFICADOR");
         } else {
-            tk.setToken("ERRO");
+            tk.setToken("ERRO - CARACTERE DESCONHECIDO");
         }
 
         return tk;

@@ -6,8 +6,6 @@
 package UI;
 
 import al_calculadora.AnalisadorLexico;
-import static com.sun.xml.internal.fastinfoset.alphabet.BuiltInRestrictedAlphabets.table;
-import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.io.BufferedReader;
@@ -16,11 +14,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.scene.control.TableRow;
 import javax.swing.JFileChooser;
-import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -180,21 +177,29 @@ public class UIPrincipal extends javax.swing.JFrame {
         al.lex(entrada);
         String[][] saida = al.toInterface(entrada);
         model.setRowCount(saida.length);
-        TableCellRenderer tcr = new tableRender();
-        TableColumn column;
+        boolean erros[] = new boolean[saida.length];
 
         for (int i = 0; i < saida.length; i++) {
 
-//            column = this.alTable.getColumnModel().getColumn(0);
-//            column.setCellRenderer(tcr);
-//            column = this.alTable.getColumnModel().getColumn(1);
-//            column.setCellRenderer(tcr);
             model.setValueAt(saida[i][0], i, 0);
             model.setValueAt(saida[i][1], i, 1);
             model.setValueAt(saida[i][2], i, 2);
             model.setValueAt(saida[i][3], i, 3);
             model.setValueAt(saida[i][4], i, 4);
 
+            if (saida[i][1] == "ERRO - CARACTERE DESCONHECIDO") {
+                erros[i] = true;
+            } else {
+                erros[i] = false;
+            }
+
+        }
+
+        TableCellRenderer tcr = new tableRender(erros);
+        TableColumn column;
+        for (int i = 0; i < 5; i++) {
+            column = this.alTable.getColumnModel().getColumn(i);
+            column.setCellRenderer(tcr);
         }
 
     }//GEN-LAST:event_analisarBtnActionPerformed
@@ -206,28 +211,26 @@ public class UIPrincipal extends javax.swing.JFrame {
         int result;
         result = jc.showOpenDialog(null);
 
-
         if (result == javax.swing.JFileChooser.APPROVE_OPTION) {
-             String filename = jc.getSelectedFile().getAbsolutePath();
+            String filename = jc.getSelectedFile().getAbsolutePath();
             try {
                 BufferedReader in = new BufferedReader(new FileReader(filename));
                 String entrada, line;
                 entrada = "";
                 line = in.readLine();
-                while(line != null  ){
-                    entrada += line+ (char)13;
+                while (line != null) {
+                    entrada += line + (char) 13;
                     line = in.readLine();
                 }
-                
+
                 this.entradaText.setText(entrada);
-                
+
             } catch (FileNotFoundException ex) {
                 Logger.getLogger(UIPrincipal.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
                 Logger.getLogger(UIPrincipal.class.getName()).log(Level.SEVERE, null, ex);
             }
 
-                
         }
     }//GEN-LAST:event_menu_abrirActionPerformed
 
@@ -281,9 +284,12 @@ public class UIPrincipal extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
 }
 
-class tableRender extends JLabel implements TableCellRenderer {
+class tableRender extends DefaultTableCellRenderer {
 
-    public tableRender() {
+    private boolean erros[];
+
+    public tableRender(boolean[] erros) {
+        this.erros = erros;
         setOpaque(true);
     }
 
@@ -292,9 +298,15 @@ class tableRender extends JLabel implements TableCellRenderer {
             JTable table,
             Object value, boolean isSelected, boolean hasFocus,
             int row, int column) {
+        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
         String token = (String) value;
-        if (token.equals("DESCONHECIDO")) {
-            setBackground(Color.RED);
+        if (this.erros[row]) {
+            if (row % 2 == 0) {
+                setBackground(Color.RED);
+            } //setText(token);
+            else {
+                setBackground(new Color(220, 0, 0));
+            }
         } else {
             setBackground(table.getBackground());
         }

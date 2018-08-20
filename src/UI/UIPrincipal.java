@@ -107,6 +107,7 @@ public class UIPrincipal extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
+        alTable.setSelectionForeground(new java.awt.Color(0, 0, 0));
         jScrollPane1.setViewportView(alTable);
 
         jMenu1.setText("Arquivos");
@@ -153,21 +154,7 @@ public class UIPrincipal extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void entradaTextKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_entradaTextKeyTyped
-//        String entrada = this.entradaText.getText();
-//        String aux;
-//        StringTokenizer palavra = new StringTokenizer(entrada, " ");
-//        entrada = "";
-//        int n = palavra.countTokens();
-//        for (int i = 0; i < (n - 1); i++) {
-//            entrada += palavra.nextToken() + " ";
-//        }
-//        AnalisadorLexico al = new AnalisadorLexico();
-//        aux = palavra.nextToken();
-//        if (al.isReservada(aux)) {
-//            entrada += "<font color='red'>" + aux + "</font>";
-//            this.entradaText.setContentType("text/html");
-//            this.entradaText.setText(entrada);
-//        }
+
     }//GEN-LAST:event_entradaTextKeyTyped
 
     private void analisarBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_analisarBtnActionPerformed

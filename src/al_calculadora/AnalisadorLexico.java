@@ -58,6 +58,8 @@ public class AnalisadorLexico {
         this.hash.put("//", "COMENTARIO");
         this.hash.put("{", "ERRO_NÃO_FECHOU");
         this.hash.put("}", "ERRO_NÃO_ABRIU");
+        this.hash.put(".", "PONTO_FIM_PROG");
+        this.hash.put(":", "DOIS_PONTOS");
 
     }
 
@@ -98,7 +100,8 @@ public class AnalisadorLexico {
         for (int i = 0; i < entrada.length(); i++) {
             col++;
             caracter = entrada.charAt(i);
-            if (caracter == (char) 13) {
+
+            if ((caracter) == Character.LINE_SEPARATOR) {
                 auxTokens = analisa(auxTokens, lin, col);
                 if (comentario == 1) {
                     comentario = 0;
@@ -119,29 +122,13 @@ public class AnalisadorLexico {
             }
             if (this.hash.containsKey(String.valueOf(caracter)) || Character.isWhitespace(caracter)) { //Se for um caracter especial
                 auxTokens = analisa(auxTokens, lin, col);
+
                 if (caracter == '{') {
                     comentario = 2;
                     auxTokens = "";
                     continue;
                 }
 
-                if (caracter == '<' && (entrada.charAt(i + 1) == '=' || entrada.charAt(i + 1) == '>')) {
-                    tk = analisaLexema("<" + entrada.charAt(i + 1), lin, ++col + 1);
-                    tokens.add(tk);
-                    i++;
-
-                } else if (caracter == '>' && entrada.charAt(i + 1) == '=') {
-                    tk = analisaLexema(">=", lin, ++col + 1);
-                    tokens.add(tk);
-                    i++;
-
-                } else if (!Character.isWhitespace(caracter)) {
-                    tk = analisaLexema(Character.toString(caracter), lin, col); //Analisa palavras reservdas
-                    tokens.add(tk);
-                }
-                // Analisar o novo char
-
-            } else {//Verificar se é um numero real ou natural
                 if (caracter == ':') {
                     auxTokens = analisa(auxTokens, lin, col);
                     if (entrada.charAt(i + 1) == '=') {
@@ -152,7 +139,24 @@ public class AnalisadorLexico {
                         tk = analisaLexema(":", lin, col);
                         tokens.add(tk);
                     }
-                } else if (Character.isJavaIdentifierPart(caracter)) {
+                } else if (caracter == '<' && (entrada.charAt(i + 1) == '=' || entrada.charAt(i + 1) == '>')) {
+                    tk = analisaLexema("<" + entrada.charAt(i + 1), lin, ++col + 1);
+                    tokens.add(tk);
+                    i++;
+
+                } else if (caracter == '>' && entrada.charAt(i + 1) == '=') {
+                    tk = analisaLexema(">=", lin, ++col + 1);
+                    tokens.add(tk);
+                    i++;
+
+                } else if (!Character.isWhitespace(caracter)) {
+                    tk = analisaLexema(Character.toString(caracter), lin, col + 1); //Analisa palavras reservdas
+                    tokens.add(tk);
+                }
+                // Analisar o novo char
+
+            } else {//Verificar se é um numero real ou natural
+                if (Character.isJavaIdentifierPart(caracter)) {
                     auxTokens += caracter;
                 }//end else trata numero
                 else {

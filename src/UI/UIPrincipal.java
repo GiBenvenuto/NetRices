@@ -14,13 +14,21 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JTable;
+import javax.swing.JTextPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.EditorKit;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
 
 /**
  *
@@ -28,11 +36,21 @@ import javax.swing.table.TableColumn;
  */
 public class UIPrincipal extends javax.swing.JFrame {
 
+    StyleContext sc;
+    Style defaultStyle;
+    DefaultStyledDocument doc;
+
     /**
      * Creates new form UIPrincipal
      */
     public UIPrincipal() {
         initComponents();
+        TextLineNumber tln = new TextLineNumber(this.entradaText);
+        scrollEntrada.setRowHeaderView(tln);
+//        sc = new StyleContext();
+//        defaultStyle = sc.getStyle(StyleContext.DEFAULT_STYLE);
+//        doc = new DefaultStyledDocument(sc);
+//        this.entradaText = new JTextPane(doc);
     }
 
     /**
@@ -47,10 +65,10 @@ public class UIPrincipal extends javax.swing.JFrame {
         jScrollPane2 = new javax.swing.JScrollPane();
         jTable1 = new javax.swing.JTable();
         analisarBtn = new javax.swing.JButton();
-        jScrollPane4 = new javax.swing.JScrollPane();
-        entradaText = new javax.swing.JEditorPane();
         jScrollPane1 = new javax.swing.JScrollPane();
         alTable = new javax.swing.JTable();
+        scrollEntrada = new javax.swing.JScrollPane();
+        entradaText = new javax.swing.JTextPane();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         menu_abrir = new javax.swing.JMenuItem();
@@ -76,13 +94,6 @@ public class UIPrincipal extends javax.swing.JFrame {
                 analisarBtnActionPerformed(evt);
             }
         });
-
-        entradaText.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyTyped(java.awt.event.KeyEvent evt) {
-                entradaTextKeyTyped(evt);
-            }
-        });
-        jScrollPane4.setViewportView(entradaText);
 
         alTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -110,6 +121,13 @@ public class UIPrincipal extends javax.swing.JFrame {
         alTable.setSelectionForeground(new java.awt.Color(0, 0, 0));
         jScrollPane1.setViewportView(alTable);
 
+        entradaText.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyTyped(java.awt.event.KeyEvent evt) {
+                entradaTextKeyTyped(evt);
+            }
+        });
+        scrollEntrada.setViewportView(entradaText);
+
         jMenu1.setText("Arquivos");
 
         menu_abrir.setText("Abrir");
@@ -131,8 +149,8 @@ public class UIPrincipal extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jScrollPane1)
-                    .addComponent(jScrollPane4, javax.swing.GroupLayout.DEFAULT_SIZE, 528, Short.MAX_VALUE)
+                    .addComponent(scrollEntrada)
+                    .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 528, Short.MAX_VALUE)
                     .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                         .addGap(0, 0, Short.MAX_VALUE)
                         .addComponent(analisarBtn)))
@@ -142,7 +160,7 @@ public class UIPrincipal extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane4, javax.swing.GroupLayout.PREFERRED_SIZE, 169, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(scrollEntrada, javax.swing.GroupLayout.PREFERRED_SIZE, 169, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(analisarBtn)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -153,13 +171,23 @@ public class UIPrincipal extends javax.swing.JFrame {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
-    private void entradaTextKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_entradaTextKeyTyped
+    public String removeHTML(String entrada) {
+        entrada = entrada.replaceAll("<html>", "");
+        entrada = entrada.replaceAll("</html>", "");
+        entrada = entrada.replaceAll("<body>", "");
+        entrada = entrada.replaceAll("</body>", "");
+        entrada = entrada.replaceAll("<head>", "");
+        entrada = entrada.replaceAll("</head>", "");
+        entrada = entrada.replaceAll("<b>", "");
+        entrada = entrada.replaceAll("</b>", "");
 
-    }//GEN-LAST:event_entradaTextKeyTyped
+        return entrada;
+    }
 
     private void analisarBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_analisarBtnActionPerformed
         DefaultTableModel model = (DefaultTableModel) this.alTable.getModel();
         String entrada = this.entradaText.getText();
+        entrada = removeHTML(entrada);
         AnalisadorLexico al = new AnalisadorLexico();
         al.lex(entrada);
         String[][] saida = al.toInterface(entrada);
@@ -174,7 +202,7 @@ public class UIPrincipal extends javax.swing.JFrame {
             model.setValueAt(saida[i][3], i, 3);
             model.setValueAt(saida[i][4], i, 4);
 
-            if (saida[i][1] == "ERRO - CARACTERE DESCONHECIDO") {
+            if (saida[i][1].contains("ERRO")) {
                 erros[i] = true;
             } else {
                 erros[i] = false;
@@ -221,6 +249,25 @@ public class UIPrincipal extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_menu_abrirActionPerformed
 
+    private void entradaTextKeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_entradaTextKeyTyped
+//        try {
+//            Style mainStyle = sc.addStyle("MainStyle", defaultStyle);
+//            StyleConstants.setBold(mainStyle, true);
+//            Character c = evt.getKeyChar();
+//            
+//            String text = this.entradaText.getText();
+//            
+//            doc.setLogicalStyle(0, mainStyle);
+//            doc.insertString(0, text, null);
+//            doc.setCharacterAttributes(0, text.length(), mainStyle, false);
+//            
+//        } catch (BadLocationException ex) {
+//            Logger.getLogger(UIPrincipal.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+
+
+    }//GEN-LAST:event_entradaTextKeyTyped
+
     /**
      * @param args the command line arguments
      */
@@ -260,14 +307,14 @@ public class UIPrincipal extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTable alTable;
     private javax.swing.JButton analisarBtn;
-    private javax.swing.JEditorPane entradaText;
+    private javax.swing.JTextPane entradaText;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JTable jTable1;
     private javax.swing.JMenuItem menu_abrir;
+    private javax.swing.JScrollPane scrollEntrada;
     // End of variables declaration//GEN-END:variables
 }
 

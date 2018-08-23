@@ -17,7 +17,6 @@ public class AnalisadorLexico {
 
     private Hashtable<String, String> hash;
     private ArrayList<Token> tokens;
-    private boolean ponto;
 
     public AnalisadorLexico() {
         this.hash = new Hashtable();
@@ -67,36 +66,24 @@ public class AnalisadorLexico {
         return (this.hash.get(palavra) != null);
     }
 
-    public boolean isEspaco(char c) {
-
-        if (c == (char) 8 || c == (char) 32 || c == (char) 13) {
-            return true;
-        }
-        return false;
-
-    }
-
     public String analisa(String auxTokens, int lin, int col) {
 
         if (!auxTokens.equals("")) {
             Token tk = analisaLexema(auxTokens, lin, col);
             tokens.add(tk);
             auxTokens = "";
-            ponto = true;
         }
         return auxTokens;
     }
 
     public void lex(String entrada) {
         char caracter;
-        ponto = true;
         short comentario = 0;//0 - nada, 1 - linha, 2 - bloco
         String auxTokens = "";
         tokens = new ArrayList();
         Token tk;
         entrada += " ";
         int lin = 1, col = 0;
-//        entrada = removeEspaco(entrada);
         for (int i = 0; i < entrada.length(); i++) {
             col++;
             caracter = entrada.charAt(i);
@@ -121,14 +108,22 @@ public class AnalisadorLexico {
                 continue;
             }
             if (this.hash.containsKey(String.valueOf(caracter)) || Character.isWhitespace(caracter)) { //Se for um caracter especial
-                auxTokens = analisa(auxTokens, lin, col);
-
+                if (caracter == '.') {
+                    tk = analisaLexema(auxTokens, lin, col);
+                    if (tk.getToken().contains("NUM")) {
+                        auxTokens += caracter;
+                    } else {
+                        auxTokens = analisa(auxTokens, lin, col);
+                        auxTokens = analisa(".", lin, col);
+                    }
+                } else {
+                    auxTokens = analisa(auxTokens, lin, col);
+                }
                 if (caracter == '{') {
                     comentario = 2;
                     auxTokens = "";
                     continue;
                 }
-
                 if (caracter == ':') {
                     auxTokens = analisa(auxTokens, lin, col);
                     if (entrada.charAt(i + 1) == '=') {
@@ -143,45 +138,32 @@ public class AnalisadorLexico {
                     tk = analisaLexema("<" + entrada.charAt(i + 1), lin, ++col + 1);
                     tokens.add(tk);
                     i++;
-
                 } else if (caracter == '>' && entrada.charAt(i + 1) == '=') {
                     tk = analisaLexema(">=", lin, ++col + 1);
                     tokens.add(tk);
                     i++;
-
-                } else if (!Character.isWhitespace(caracter)) {
+                } else if (!Character.isWhitespace(caracter) && caracter != '.') {
                     tk = analisaLexema(Character.toString(caracter), lin, col + 1); //Analisa palavras reservdas
                     tokens.add(tk);
                 }
-                // Analisar o novo char
-
             } else {//Verificar se é um numero real ou natural
                 if (Character.isJavaIdentifierPart(caracter)) {
                     auxTokens += caracter;
                 }//end else trata numero
                 else {
-
-                    //verificar se é ponto
-                    if (caracter == '.' && ponto) {
-                        auxTokens += caracter;
-                        ponto = false;
-                    } else {
-                        if (caracter == '/' && entrada.charAt(i + 1) == '/') {
-                            comentario = 1;
-                            if (!auxTokens.equals("")) {
-                                col--;
-                            }
-                            continue;
-                        } else {
-                            auxTokens = analisa(auxTokens, lin, col);
+                    if (caracter == '/' && entrada.charAt(i + 1) == '/') {
+                        comentario = 1;
+                        if (!auxTokens.equals("")) {
+                            col--;
                         }
-                        tk = analisaLexema(Character.toString(caracter), lin, col);
-                        tokens.add(tk);
+                        continue;
+                    } else {
+                        auxTokens = analisa(auxTokens, lin, col);
                     }
-
+                    tk = analisaLexema(Character.toString(caracter), lin, col);
+                    tokens.add(tk);
                 }
             }
-
         }
         if (comentario == 2) {
             tk = analisaLexema("{", lin, col);
@@ -191,7 +173,6 @@ public class AnalisadorLexico {
             col++;
         }
         analisa(auxTokens, lin, col);
-
     }
 
     public String[][] toInterface(String entrada) {
@@ -222,11 +203,26 @@ public class AnalisadorLexico {
             tk.setToken(this.hash.get(auxTokens));
             //tk.setColIni(col-1);
         } else if (auxTokens.matches("^([0-9])+$")) {
-            tk.setToken("NUM_NAT");
+            if (auxTokens.length() > 5) {
+                tk.setToken("ERRO - NUM_MUITO_GRANDE");
+            } else {
+                tk.setToken("NUM_NAT");
+            }
         } else if (auxTokens.matches("^([0-9])*\\.([0-9])+$")) {
-            tk.setToken("NUM_REAL");
+            if (auxTokens.length() > 11) {
+                tk.setToken("ERRO - NUM_MUITO_GRANDE");
+            } else {
+                tk.setToken("NUM_REAL");
+            }
         } else if (auxTokens.matches("^" + letra + "(" + letra + "|[0-9])*$")) {
-            tk.setToken("IDENTIFICADOR");
+            if (auxTokens.length() > 10) {
+                tk.setToken("ERRO - IDENTIFICADOR_MUITO_GRANDE");
+            } else {
+                tk.setToken("IDENTIFICADOR");
+            }
+
+        } else if (auxTokens.matches("^([0-9])*\\.([0-9])*(\\.([0-9]*))+$")) {
+            tk.setToken("ERRO - NÚMERO INVÁLIDO");
         } else {
             tk.setToken("ERRO - CARACTERE DESCONHECIDO");
         }

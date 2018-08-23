@@ -234,7 +234,7 @@ public class UIPrincipal extends javax.swing.JFrame {
                 entrada = "";
                 line = in.readLine();
                 while (line != null) {
-                    entrada += line + (char) 13;
+                    entrada += line + "\r\n";
                     line = in.readLine();
                 }
 

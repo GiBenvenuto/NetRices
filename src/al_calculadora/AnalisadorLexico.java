@@ -6,20 +6,40 @@
 package al_calculadora;
 
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 /**
  *
  * @author Gi
  */
-public class AnalisadorLexico {
+public class AnalisadorLexico{
 
-    private Hashtable<String, String> hash;
-    private ArrayList<Token> tokens;
+    private final Map<String, String> hash;
+    private final List<Token> tokens;
+    private int cont;
+    private static AnalisadorLexico instance;
 
-    public AnalisadorLexico() {
-        this.hash = new Hashtable();
+    public Token nextToken() {
+        if (this.cont < tokens.size()) {
+            return this.tokens.get(this.cont++);
+        }else{
+            return null;
+        }
+    }
+    
+    public boolean hasNext(){
+        return this.cont < this.tokens.size();
+    }
+    
+    public void resetCont(){
+        this.cont = 0;
+    }
+
+    private AnalisadorLexico() {
+        this.hash = new HashMap();
         this.hash.put("+", "OP_SOMA");
         this.hash.put("-", "OP_ SUB");
         this.hash.put("*", "OP_MULT");
@@ -59,7 +79,15 @@ public class AnalisadorLexico {
         this.hash.put("}", "ERRO_NÃO_ABRIU");
         this.hash.put(".", "PONTO_FIM_PROG");
         this.hash.put(":", "DOIS_PONTOS");
-
+        
+        this.tokens = new ArrayList();
+    }
+    
+    public static AnalisadorLexico getInstance(){
+        if (instance == null){
+            instance = new AnalisadorLexico();
+        }
+        return instance;
     }
 
     public boolean isReservada(String palavra) {
@@ -80,7 +108,8 @@ public class AnalisadorLexico {
         char caracter;
         short comentario = 0;//0 - nada, 1 - linha, 2 - bloco
         String auxTokens = "";
-        tokens = new ArrayList();
+        this.tokens.clear();
+        this.cont = 0;
         Token tk;
         entrada += " ";
         int lin = 1, col = 0;

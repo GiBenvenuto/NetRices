@@ -219,7 +219,7 @@ public class UIPrincipal extends javax.swing.JFrame {
         DefaultTableModel model = (DefaultTableModel) this.alTable.getModel();
         String entrada = this.entradaText.getText();
         entrada = removeHTML(entrada);
-        AnalisadorLexico al = new AnalisadorLexico();
+        AnalisadorLexico al =  AnalisadorLexico.getInstance();
         al.lex(entrada);
         String[][] saida = al.toInterface(entrada);
         model.setRowCount(saida.length);

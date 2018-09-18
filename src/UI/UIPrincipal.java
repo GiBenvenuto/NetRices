@@ -5,7 +5,7 @@
  */
 package UI;
 
-import al_calculadora.AnalisadorLexico;
+import Compilador.AnalisadorLexico;
 import java.awt.Color;
 import java.awt.Component;
 import java.io.BufferedReader;

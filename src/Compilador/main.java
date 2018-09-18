@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package al_calculadora;
+package Compilador;
 
 import UI.UIPrincipal;
 
@@ -11,7 +11,7 @@ import UI.UIPrincipal;
  *
  * @author Gi
  */
-public class AL_Calculadora {
+public class main {
 
     /**
      * @param args the command line arguments

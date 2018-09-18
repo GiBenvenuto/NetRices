@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package al_calculadora;
+package Compilador;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,6 +30,10 @@ public class AnalisadorLexico{
         }
     }
     
+    public void previousToken (){
+        this.cont--;
+    }
+    
     public boolean hasNext(){
         return this.cont < this.tokens.size();
     }
@@ -43,16 +47,16 @@ public class AnalisadorLexico{
         this.hash.put("+", "OP_SOMA");
         this.hash.put("-", "OP_ SUB");
         this.hash.put("*", "OP_MULT");
-        this.hash.put("=", "OP_IGUAL");
+        this.hash.put("=", "OP_REL_IGUAL");
         this.hash.put("(", "P_ABRE");
         this.hash.put(")", "P_FECHA");
         this.hash.put(";", "PONTO_VIRGULA");
         this.hash.put(":=", "ATRIBUICAO");
-        this.hash.put("<", "OP_MENOR");
-        this.hash.put(">", "OP_MAIOR");
-        this.hash.put("<=", "OP_MENOR_IGUAL");
-        this.hash.put(">=", "OP_MAIOR_IGUAL");
-        this.hash.put("<>", "OP_DIFERENTE");
+        this.hash.put("<", "OP_REL_MENOR");
+        this.hash.put(">", "OP_REL_MAIOR");
+        this.hash.put("<=", "OP_REL_MENOR_IGUAL");
+        this.hash.put(">=", "OP_REL_MAIOR_IGUAL");
+        this.hash.put("<>", "OP_REL_DIFERENTE");
         this.hash.put("or", "OP_OR");
         this.hash.put("not", "OP_NOT");
         this.hash.put("and", "OP_AND");
@@ -62,6 +66,7 @@ public class AnalisadorLexico{
         this.hash.put("false", "ID_CONST");
         this.hash.put("int", "ID_TIPO");
         this.hash.put("boolean", "ID_TIPO");
+        this.hash.put("float", "ID_TIPO");
         this.hash.put("read", "ID_PROC");
         this.hash.put("write", "ID_PROC");
         this.hash.put("program", "PALAVRA_RESERVADA");

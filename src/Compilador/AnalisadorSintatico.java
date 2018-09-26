@@ -28,42 +28,41 @@ public class AnalisadorSintatico {
 
     public void programa() {//1
         Token tk = lex.nextToken();
-        if (tk.getLexema().equals("program")) {
-            identificador();
-            tk = lex.nextToken();
-            if (tk.getLexema().equals(";")) {
-                bloco();
-                tk = lex.nextToken();
-                if (tk.getLexema().equals(".")) {
-                    System.out.println("Sucesso");
-                } else {
-                    System.out.println("Erro");
-                }
-            } else {
-                System.out.println("Erro");
-            }
-
+        if (!tk.getLexema().equals("program")) {
+            System.out.println("ERRO");
+        }
+        identificador();
+        tk = lex.nextToken();
+        if (!tk.getLexema().equals(";")) {
+            System.out.println("ERRO");
+        }
+        bloco();
+        tk = lex.nextToken();
+        if (tk.getLexema().equals(".")) {
+            System.out.println("Sucesso");
         } else {
             System.out.println("ERRO");
         }
+
     }
 
     public void bloco() {//2
         Token tk = this.lex.nextToken();
+
         if (tk.getToken().equals("ID_TIPO")) {
             parteDeclaracoesVariaveis();
             tk = this.lex.nextToken();
-            if (tk.getLexema().equals("begin")) {
-                comandoComposto();
-            } else {
-                System.out.println("Erro");
-            }
-        } else if (tk.getLexema().equals("procedure")) {
+        }
+
+        if (tk.getLexema().equals("procedure")) {
             parteDeclaracoesSubrotinas();
-        } else if (tk.getLexema().equals("begin")) {
+            tk = this.lex.nextToken();
+        }
+
+        if (tk.getLexema().equals("begin")) {
             comandoComposto();
         } else {
-            System.out.println("Erro");
+            System.out.println("ERRO");
         }
     }
 
@@ -82,7 +81,7 @@ public class AnalisadorSintatico {
     }
 
     public void declaracaoVariaveis() { //4
-        Token tk = this.lex.nextToken();
+        Token tk;
         do {
             identificador();
             tk = this.lex.nextToken();
@@ -91,42 +90,13 @@ public class AnalisadorSintatico {
         this.lex.previousToken();
     }
 
-    public void identificador() {//25
-        Token tk = this.lex.nextToken();
-
-        if (tk.getToken().equals("IDENTIFICADOR")) {
-            return;
-        } else {
-            System.out.println("ERRO-IDENTIFICADOR NÃO ENCONTRADO");
-        }
-        return;
-    }
-
-    public void declaracaoProcedimento() {
-        Token tk;
-        identificador();
-        tk = this.lex.nextToken();
-        if (tk.getToken().equals("P_ABRE")) {
-            paramentrosFormais();
-        } else if (tk.getToken().equals("PONTO_VIRGULA")) {
-            bloco();
-        } else {
-            System.out.println("Erro");
-        }
-
-    }
-
-    private void comandoComposto() { // 10
+    private void listaIdentificadores() { //5
         Token tk;
         do {
-            comando();
+            identificador();
             tk = this.lex.nextToken();
-
-        } while (tk.getToken().equals("PONTO_VIRGULA"));
-        if (!tk.getLexema().equals("end")) {
-            System.out.println("ERRO");
-        }
-
+        } while (tk.getToken().equals("VIRGULA"));
+        this.lex.previousToken();
     }
 
     private void parteDeclaracoesSubrotinas() { //6
@@ -135,12 +105,27 @@ public class AnalisadorSintatico {
             declaracaoProcedimento();
             tk = this.lex.nextToken();
             if (!tk.getToken().equals("PONTO_VIRGULA")) {
-                System.out.println("Erro");
-                break;
+                System.out.println("ERRO");
             }
             tk = this.lex.nextToken();
         } while (tk.getLexema().equals("procedure"));
         this.lex.previousToken();
+    }
+
+    public void declaracaoProcedimento() { //7
+        Token tk;
+        identificador();
+        tk = this.lex.nextToken();
+        if (tk.getToken().equals("P_ABRE")) {
+            paramentrosFormais();
+            tk = this.lex.nextToken();
+        }
+        if (tk.getToken().equals("PONTO_VIRGULA")) {
+            bloco();
+        } else {
+            System.out.println("ERRO");
+        }
+
     }
 
     public void paramentrosFormais() { //8
@@ -158,35 +143,32 @@ public class AnalisadorSintatico {
 
     public void secaoParametrosFormais() { //9
         Token tk = this.lex.nextToken();
-        if (tk.getLexema().equals("var")) {
-            tk = this.lex.nextToken();
+        if (!tk.getLexema().equals("var")) {
+            this.lex.previousToken();
         }
         listaIdentificadores();
         tk = this.lex.nextToken();
         if (!tk.getToken().equals("DOIS_PONTOS")) {
             System.out.println("ERRO");
         }
-        identificador();
+        tk = this.lex.nextToken();
+        if (!tk.getToken().equals("ID_TIPO")) {
+            System.out.println("ERRO - 171");
+        }
 
     }
 
-    private void listaIdentificadores() { //5
+    private void comandoComposto() { // 10
         Token tk;
         do {
-            identificador();
+            comando();
             tk = this.lex.nextToken();
-        } while (tk.getToken().equals("VIRGULA"));
-        this.lex.previousToken();
-    }
 
-    public void atr_chProc() { //12 adaptado
-        Token tk = this.lex.nextToken();
-        if (tk.getToken().equals("ATRIBUICAO")) {
-            expressao();
-        } else {
-            this.lex.previousToken();
-            chamadaProcedimento();
+        } while (tk.getToken().equals("PONTO_VIRGULA"));
+        if (!tk.getLexema().equals("end")) {
+            System.out.println("ERRO");
         }
+
     }
 
     private void comando() { //11
@@ -205,18 +187,14 @@ public class AnalisadorSintatico {
 
     }
 
-    private void comandoCondicional1() {//14
-
-    }
-
-    private void comandoRepetitivo() {//15
-        Token tk;
-        expressao();
-        tk = this.lex.nextToken();
-        if (!tk.getLexema().equals("do")) {
-            System.out.println("ERRO");
+    private void atr_chProc() { //12 adaptado
+        Token tk = this.lex.nextToken();
+        if (tk.getToken().equals("ATRIBUICAO")) {
+            expressao();
+        } else {
+            this.lex.previousToken();
+            chamadaProcedimento();
         }
-        comando();
     }
 
     private void chamadaProcedimento() {//13
@@ -231,12 +209,42 @@ public class AnalisadorSintatico {
         this.lex.previousToken();
     }
 
+    private void comandoCondicional1() {//14A
+        Token tk;
+        expressao();//16
+        tk = this.lex.nextToken();
+        if (!tk.getLexema().equals("then")) {
+            System.out.println("ERRO");
+        }
+        comando();
+        comandoCondicional2();
+    }
+
+    private void comandoCondicional2() {//14B
+        Token tk = this.lex.nextToken();
+        if (tk.getLexema().equals("else")) {
+            comando();
+        } else {
+            this.lex.previousToken();
+        }
+
+    }
+
+    private void comandoRepetitivo() {//15
+        Token tk;
+        expressao();
+        tk = this.lex.nextToken();
+        if (!tk.getLexema().equals("do")) {
+            System.out.println("ERRO");
+        }
+        comando();
+    }
+
     private void expressao() {//16
         Token tk;
         expressaoSimples();
         tk = this.lex.nextToken();
         if (tk.getToken().contains("OP_REL")) { //relação 17
-            tk = this.lex.nextToken();
             expressaoSimples();
         } else {
             this.lex.previousToken();
@@ -244,20 +252,10 @@ public class AnalisadorSintatico {
 
     }
 
-    private void listaExpressoes() {
-        Token tk;
-        do {
-            expressao();
-            tk = this.lex.nextToken();
-        } while (tk.getToken().equals("VIRGULA"));
-        this.lex.previousToken();
-
-    }
-
-    private void expressaoSimples() {
+    private void expressaoSimples() {//18
         Token tk = this.lex.nextToken();
-        if (tk.getToken().equals("OP_SOMA") || tk.getToken().equals("OP_SUB")) {
-            tk = this.lex.nextToken();
+        if (!(tk.getToken().equals("OP_SOMA") || tk.getToken().equals("OP_SUB"))) {
+            this.lex.previousToken();
         }
         termo();
         tk = this.lex.nextToken();
@@ -274,14 +272,50 @@ public class AnalisadorSintatico {
         Token tk;
         do {
             fator();
-            tk = this.lex.nextToken();            
+            tk = this.lex.nextToken();
         } while (tk.getToken().equals("OP_MULT") || tk.getToken().equals("OP_AND") || tk.getToken().equals("OP_DIV"));
+        this.lex.previousToken();
+    }
+
+    private void fator() {//20
+        Token tk = this.lex.nextToken();
+        if (tk.getToken().equals("IDENTIFICADOR")) {
+
+        } else if (tk.getToken().equals("NUM_NAT")) {
+
+        } else if (tk.getToken().equals("P_ABRE")) {
+            expressao();
+            tk = this.lex.nextToken();
+            if (!tk.getToken().equals("P_FECHA")) {
+                System.out.println("ERRO - 312");
+            }
+        } else if (tk.getToken().equals("OP_NOT")) {
+            fator();
+        } else {
+            System.out.println("ERRO - 317");
+        }
+
+    }
+
+    private void listaExpressoes() {//22
+        Token tk;
+        do {
+            expressao();
+            tk = this.lex.nextToken();
+        } while (tk.getToken().equals("VIRGULA"));
         this.lex.previousToken();
 
     }
 
-    private void fator() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void identificador() {//25
+        Token tk = this.lex.nextToken();
+
+        if (tk.getToken().equals("IDENTIFICADOR")) {
+            return;
+        } else {
+            System.out.println("ERRO-IDENTIFICADOR NÃO ENCONTRADO");
+        }
+        return;
     }
 
 }

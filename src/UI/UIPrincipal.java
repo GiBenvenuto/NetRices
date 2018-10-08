@@ -6,6 +6,7 @@
 package UI;
 
 import Compilador.AnalisadorLexico;
+import Compilador.AnalisadorSintatico;
 import java.awt.Color;
 import java.awt.Component;
 import java.io.BufferedReader;
@@ -221,6 +222,8 @@ public class UIPrincipal extends javax.swing.JFrame {
         entrada = removeHTML(entrada);
         AnalisadorLexico al =  AnalisadorLexico.getInstance();
         al.lex(entrada);
+        AnalisadorSintatico as = AnalisadorSintatico.getInstance();
+        as.programa();
         String[][] saida = al.toInterface(entrada);
         model.setRowCount(saida.length);
         boolean erros[] = new boolean[saida.length];

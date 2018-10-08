@@ -5,6 +5,8 @@
  */
 package Compilador;
 
+import java.util.LinkedList;
+
 /**
  * Melhor analisador sintático de todos os tempos. <br>
  *
@@ -13,10 +15,12 @@ package Compilador;
 public class AnalisadorSintatico {
 
     private final AnalisadorLexico lex;
+    private LinkedList<String> sinc;
     private static AnalisadorSintatico instance;
 
     private AnalisadorSintatico() {
         this.lex = AnalisadorLexico.getInstance();
+        this.sinc = new LinkedList();
     }
 
     public static AnalisadorSintatico getInstance() {
@@ -26,15 +30,35 @@ public class AnalisadorSintatico {
         return instance;
     }
 
+    private void erro(String msg) {
+        
+        System.out.println(msg);
+        Token tk = lex.nextToken();
+        while(!this.sinc.contains(tk.getToken())){
+            tk = this.lex.nextToken();
+        }
+        this.lex.previousToken();
+
+    }
+
     public void programa() {//1
         Token tk = lex.nextToken();
-        if (!tk.getLexema().equals("program")) {
-            System.out.println("ERRO");
+        if (!tk.getToken().equals("PALAVRA_RESERVADA_PROGRAM")) {
+            this.sinc.clear();
+            this.sinc.add("IDENTIFICADOR");
+            erro("ERRO - palavra reservada 'program' não encontrada!");
         }
+        this.sinc.clear();
+        this.sinc.add("PONTO_VIRGULA");
         identificador();
         tk = lex.nextToken();
         if (!tk.getLexema().equals(";")) {
-            System.out.println("ERRO");
+            this.sinc.clear();
+            this.sinc.add("ID_TIPO");
+            this.sinc.add("PALAVRA_RESERVADA_BEGIN");
+            this.sinc.add("PALAVRA_RESERVADA_PROCEDURE");
+            erro("ERRO - ';' ");
+            
         }
         bloco();
         tk = lex.nextToken();

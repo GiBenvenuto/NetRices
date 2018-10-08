@@ -15,7 +15,7 @@ import java.util.StringTokenizer;
  *
  * @author Gi
  */
-public class AnalisadorLexico{
+public class AnalisadorLexico {
 
     private final Map<String, String> hash;
     private final List<Token> tokens;
@@ -25,20 +25,20 @@ public class AnalisadorLexico{
     public Token nextToken() {
         if (this.cont < tokens.size()) {
             return this.tokens.get(this.cont++);
-        }else{
-            return null;
+        } else {
+            return this.tokens.get(cont-1);
         }
     }
-    
-    public void previousToken (){
+
+    public void previousToken() {
         this.cont--;
     }
-    
-    public boolean hasNext(){
+
+    public boolean hasNext() {
         return this.cont < this.tokens.size();
     }
-    
-    public void resetCont(){
+
+    public void resetCont() {
         this.cont = 0;
     }
 
@@ -62,34 +62,30 @@ public class AnalisadorLexico{
         this.hash.put("and", "OP_AND");
         this.hash.put("div", "OP_DIV");
         this.hash.put(",", "VIRGULA");
-        this.hash.put("true", "ID_CONST"); //Verificar nomenclatura
-        this.hash.put("false", "ID_CONST");
         this.hash.put("int", "ID_TIPO");
         this.hash.put("boolean", "ID_TIPO");
         this.hash.put("float", "ID_TIPO");
-        this.hash.put("read", "ID_PROC");
-        this.hash.put("write", "ID_PROC");
-        this.hash.put("program", "PALAVRA_RESERVADA");
-        this.hash.put("begin", "PALAVRA_RESERVADA");
-        this.hash.put("var", "PALAVRA_RESERVADA");
-        this.hash.put("procedure", "PALAVRA_RESERVADA");
-        this.hash.put("end", "PALAVRA_RESERVADA");
-        this.hash.put("if", "PALAVRA_RESERVADA");
-        this.hash.put("then", "PALAVRA_RESERVADA");
-        this.hash.put("else", "PALAVRA_RESERVADA");
-        this.hash.put("while", "PALAVRA_RESERVADA");
-        this.hash.put("do", "PALAVRA_RESERVADA");
+        this.hash.put("program", "PALAVRA_RESERVADA_PROGRAM");
+        this.hash.put("begin", "PALAVRA_RESERVADA_BEGIN");
+        this.hash.put("var", "PALAVRA_RESERVADA_VAR");
+        this.hash.put("procedure", "PALAVRA_RESERVADA_PROCEDURE");
+        this.hash.put("end", "PALAVRA_RESERVADA_END");
+        this.hash.put("if", "PALAVRA_RESERVADA_IF");
+        this.hash.put("then", "PALAVRA_RESERVADA_THEN");
+        this.hash.put("else", "PALAVRA_RESERVADA_ELSE");
+        this.hash.put("while", "PALAVRA_RESERVADA_WHILE");
+        this.hash.put("do", "PALAVRA_RESERVADA_DO");
         this.hash.put("//", "COMENTARIO");
-        this.hash.put("{", "ERRO_NÃO_FECHOU");
-        this.hash.put("}", "ERRO_NÃO_ABRIU");
+        this.hash.put("{", "ABRE_COMENTARIO");
+        this.hash.put("}", "FECHA_COMENTARIO");
         this.hash.put(".", "PONTO_FIM_PROG");
         this.hash.put(":", "DOIS_PONTOS");
-        
+
         this.tokens = new ArrayList();
     }
-    
-    public static AnalisadorLexico getInstance(){
-        if (instance == null){
+
+    public static AnalisadorLexico getInstance() {
+        if (instance == null) {
             instance = new AnalisadorLexico();
         }
         return instance;

@@ -45,7 +45,7 @@ public class AnalisadorLexico {
     private AnalisadorLexico() {
         this.hash = new HashMap();
         this.hash.put("+", "OP_SOMA");
-        this.hash.put("-", "OP_ SUB");
+        this.hash.put("-", "OP_SUB");
         this.hash.put("*", "OP_MULT");
         this.hash.put("=", "OP_REL_IGUAL");
         this.hash.put("(", "P_ABRE");

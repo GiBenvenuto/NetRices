@@ -5,6 +5,7 @@
  */
 package Compilador;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 /**
@@ -16,11 +17,17 @@ public class AnalisadorSintatico {
 
     private final AnalisadorLexico lex;
     private LinkedList<String> sinc;
+    private ArrayList<String> erros;
     private static AnalisadorSintatico instance;
+
+    public ArrayList<String> getErros() {
+        return erros;
+    }
 
     private AnalisadorSintatico() {
         this.lex = AnalisadorLexico.getInstance();
         this.sinc = new LinkedList();
+        this.erros = new ArrayList();
     }
 
     public static AnalisadorSintatico getInstance() {
@@ -31,10 +38,12 @@ public class AnalisadorSintatico {
     }
 
     private void erro(String msg) {
-        
-        System.out.println(msg);
-        Token tk = lex.nextToken();
-        while(!this.sinc.contains(tk.getToken())){
+
+        this.erros.add(msg);
+//       System.out.println(msg);
+        this.lex.previousToken();
+        Token tk = this.lex.nextToken();
+        while (!this.sinc.contains(tk.getToken()) && this.lex.hasNext()) {
             tk = this.lex.nextToken();
         }
         this.lex.previousToken();
@@ -42,30 +51,35 @@ public class AnalisadorSintatico {
     }
 
     public void programa() {//1
+        this.erros.clear();
         Token tk = lex.nextToken();
         if (!tk.getToken().equals("PALAVRA_RESERVADA_PROGRAM")) {
             this.sinc.clear();
             this.sinc.add("IDENTIFICADOR");
-            erro("ERRO - palavra reservada 'program' não encontrada!");
+            erro("ERRO - palavra reservada 'program' esperado!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
         }
         this.sinc.clear();
         this.sinc.add("PONTO_VIRGULA");
         identificador();
         tk = lex.nextToken();
-        if (!tk.getLexema().equals(";")) {
+        if (!tk.getToken().equals("PONTO_VIRGULA")) {
             this.sinc.clear();
             this.sinc.add("ID_TIPO");
             this.sinc.add("PALAVRA_RESERVADA_BEGIN");
             this.sinc.add("PALAVRA_RESERVADA_PROCEDURE");
-            erro("ERRO - ';' ");
-            
+            erro("ERRO - ';' esperado!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
         }
         bloco();
         tk = lex.nextToken();
-        if (tk.getLexema().equals(".")) {
-            System.out.println("Sucesso");
+        if (tk.getToken().equals("PONTO_FIM_PROG")) {
+            this.erros.add("Fim da Análise Sintática!!");
         } else {
-            System.out.println("ERRO");
+            this.sinc.clear();
+            this.sinc.add("PONTO_FIM_PROG");
+            erro("ERRO - '.' esperado!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
         }
 
     }
@@ -78,16 +92,22 @@ public class AnalisadorSintatico {
             tk = this.lex.nextToken();
         }
 
-        if (tk.getLexema().equals("procedure")) {
+        if (tk.getToken().equals("PALAVRA_RESERVADA_PROCEDURE")) {
             parteDeclaracoesSubrotinas();
             tk = this.lex.nextToken();
         }
 
-        if (tk.getLexema().equals("begin")) {
-            comandoComposto();
-        } else {
-            System.out.println("ERRO");
+        if (!tk.getToken().equals("PALAVRA_RESERVADA_BEGIN")) {
+            this.sinc.clear();
+            this.sinc.add("IDENTIFICADOR");
+            this.sinc.add("PALAVRA_RESERVADA_IF");
+            this.sinc.add("PALAVRA_RESERVADA_WHILE");
+            this.sinc.add("PALAVRA_RESERVADA_READ");
+
+            erro("ERRO - palavra reservada 'begin' esperada!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
         }
+        comandoComposto();
     }
 
     public void parteDeclaracoesVariaveis() {//3
@@ -96,7 +116,12 @@ public class AnalisadorSintatico {
             declaracaoVariaveis();
             tk = this.lex.nextToken();
             if (!tk.getToken().equals("PONTO_VIRGULA")) {
-                System.out.println("ERRO");
+                this.sinc.clear();
+                this.sinc.add("PALAVRA_RESERVADA_PROCEDURE");
+                this.sinc.add("PALAVRA_RESERVADA_BEGIN");
+                this.sinc.add("ID_TIPO");
+                erro("ERRO - ';' esperado!\n"
+                        + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
             }
             tk = this.lex.nextToken();
 
@@ -129,15 +154,21 @@ public class AnalisadorSintatico {
             declaracaoProcedimento();
             tk = this.lex.nextToken();
             if (!tk.getToken().equals("PONTO_VIRGULA")) {
-                System.out.println("ERRO");
+                this.sinc.clear();
+                this.sinc.add("PALAVRA_RESERVADA_BEGIN");
+                erro("ERRO - ';' esperado!\n"
+                        + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
             }
             tk = this.lex.nextToken();
-        } while (tk.getLexema().equals("procedure"));
+        } while (tk.getToken().equals("PALAVRA_RESERVADA_PROCEDURE"));
         this.lex.previousToken();
     }
 
     public void declaracaoProcedimento() { //7
         Token tk;
+        this.sinc.clear();
+        this.sinc.add("P_ABRE");
+        this.sinc.add("PONTO_VIRGULA");
         identificador();
         tk = this.lex.nextToken();
         if (tk.getToken().equals("P_ABRE")) {
@@ -147,7 +178,12 @@ public class AnalisadorSintatico {
         if (tk.getToken().equals("PONTO_VIRGULA")) {
             bloco();
         } else {
-            System.out.println("ERRO");
+            this.sinc.clear();
+            this.sinc.add("ID_TIPO");
+            this.sinc.add("PALAVRA_RESERVADA_BEGIN");
+            this.sinc.add("PALAVRA_RESERVADA_PROCEDURE");
+            erro("ERRO - ';' esperado!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
         }
 
     }
@@ -161,23 +197,34 @@ public class AnalisadorSintatico {
             tk = this.lex.nextToken();
         }
         if (!tk.getToken().equals("P_FECHA")) {
-            System.out.println("ERRO");
+            this.sinc.clear();
+            this.sinc.add("PONTO_VIRGULA");
+            erro("ERRO - ')' esperado!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
         }
     }
 
     public void secaoParametrosFormais() { //9
         Token tk = this.lex.nextToken();
-        if (!tk.getLexema().equals("var")) {
+        if (!tk.getToken().equals("PALAVRA_RESERVADA_VAR")) {
             this.lex.previousToken();
         }
         listaIdentificadores();
         tk = this.lex.nextToken();
         if (!tk.getToken().equals("DOIS_PONTOS")) {
-            System.out.println("ERRO");
+            this.sinc.clear();
+            this.sinc.add("IDENTIFICADOR");
+            erro("ERRO - ':' esperado!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
         }
         tk = this.lex.nextToken();
         if (!tk.getToken().equals("ID_TIPO")) {
-            System.out.println("ERRO - 171");
+            this.sinc.clear();
+            this.sinc.add("PALAVRA_RESERVADA_VAR");
+            this.sinc.add("IDENTIFICADOR");
+            this.sinc.add("P_FECHA");
+            erro("ERRO - ';' esperado!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
         }
 
     }
@@ -189,8 +236,15 @@ public class AnalisadorSintatico {
             tk = this.lex.nextToken();
 
         } while (tk.getToken().equals("PONTO_VIRGULA"));
-        if (!tk.getLexema().equals("end")) {
-            System.out.println("ERRO");
+        if (!tk.getToken().equals("PALAVRA_RESERVADA_END")) {
+            this.sinc.clear();
+            this.sinc.add("PALAVRA_RESERVADA_END");
+            this.sinc.add("PALAVRA_RESERVADA_ELSE");
+            this.sinc.add("PONTO_FIM_PROG");
+            this.sinc.add("PONTO_VIRGULA");
+            erro("ERRO - 'end' esperado!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            this.lex.nextToken();
         }
 
     }
@@ -199,14 +253,19 @@ public class AnalisadorSintatico {
         Token tk = this.lex.nextToken();
         if (tk.getToken().equals("IDENTIFICADOR")) {
             atr_chProc();
-        } else if (tk.getLexema().equals("begin")) {
+        } else if (tk.getToken().equals("PALAVRA_RESERVADA_BEGIN")) {
             comandoComposto();
-        } else if (tk.getLexema().equals("if")) {
+        } else if (tk.getToken().equals("PALAVRA_RESERVADA_IF")) {
             comandoCondicional1();
-        } else if (tk.getLexema().equals("while")) {
+        } else if (tk.getToken().equals("PALAVRA_RESERVADA_WHILE")) {
             comandoRepetitivo();
         } else {
-            System.out.println("ERRO");
+            this.sinc.clear();
+            this.sinc.add("PALAVRA_RESERVADA_END");
+            this.sinc.add("PALAVRA_RESERVADA_ELSE");
+            this.sinc.add("PONTO_VIRGULA");
+            erro("ERRO - comando não reconhecido !\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
         }
 
     }
@@ -227,18 +286,55 @@ public class AnalisadorSintatico {
             listaExpressoes();
             tk = this.lex.nextToken();
             if (!tk.getToken().equals("P_FECHA")) {
-                System.out.println("ERRO");
+                this.sinc.clear();
+                this.sinc.add("PALAVRA_RESERVADA_END");
+                this.sinc.add("PALAVRA_RESERVADA_ELSE");
+                this.sinc.add("PONTO_VIRGULA");
+                erro("ERRO - ')' esperado!\n"
+                        + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
             }
+        } else if (tk.getToken().equals("PONTO_VIRGULA")
+                || tk.getToken().equals("PALAVRA_RESERVADA_END") || tk.getToken().equals("PALAVRA_RESERVADA_ELSE")) {
+            this.lex.previousToken();
+        } else {
+            this.sinc.clear();
+            this.sinc.add("PALAVRA_RESERVADA_END");
+            this.sinc.add("PALAVRA_RESERVADA_ELSE");
+            this.sinc.add("PONTO_VIRGULA");
+            erro("ERRO - comando não reconhecido!!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
         }
-        this.lex.previousToken();
     }
 
     private void comandoCondicional1() {//14A
-        Token tk;
-        expressao();//16
+        Token tk = this.lex.nextToken();
+
+        if (!tk.getToken().equals("P_ABRE")) {
+            this.sinc.clear();
+            this.sinc.add(tk.getToken());
+            erro("ERRO - '(' esperado!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+        }
+        expressao();//16   
         tk = this.lex.nextToken();
-        if (!tk.getLexema().equals("then")) {
-            System.out.println("ERRO");
+
+        if (!tk.getToken().equals("P_FECHA")) {
+            this.sinc.clear();
+            this.sinc.add(tk.getToken());
+            erro("ERRO - ')' esperado!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+        }
+
+        tk = this.lex.nextToken();
+        if (!tk.getToken().equals("PALAVRA_RESERVADA_THEN")) {
+            this.sinc.clear();
+            this.sinc.add("IDENTIFICADOR");
+            this.sinc.add("PALAVRA_RESERVADA_IF");
+            this.sinc.add("PALAVRA_RESERVADA_WHILE");
+            this.sinc.add("PALAVRA_RESERVADA_BEGIN");
+
+            erro("ERRO - 'then' esperado!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
         }
         comando();
         comandoCondicional2();
@@ -246,7 +342,7 @@ public class AnalisadorSintatico {
 
     private void comandoCondicional2() {//14B
         Token tk = this.lex.nextToken();
-        if (tk.getLexema().equals("else")) {
+        if (tk.getToken().equals("PALAVRA_RESERVADA_ELSE")) {
             comando();
         } else {
             this.lex.previousToken();
@@ -255,11 +351,32 @@ public class AnalisadorSintatico {
     }
 
     private void comandoRepetitivo() {//15
-        Token tk;
-        expressao();
+        Token tk = this.lex.nextToken();
+        if (!tk.getToken().equals("P_ABRE")) {
+            this.sinc.clear();
+            this.sinc.add(tk.getToken());
+            erro("ERRO - '(' esperado!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+        }
+        expressao();//16   
         tk = this.lex.nextToken();
-        if (!tk.getLexema().equals("do")) {
-            System.out.println("ERRO");
+
+        if (!tk.getToken().equals("P_FECHA")) {
+            this.sinc.clear();
+            this.sinc.add(tk.getToken());
+            erro("ERRO - ')' esperado!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+        }
+        tk = this.lex.nextToken();
+        if (!tk.getToken().equals("PALAVRA_RESERVADA_DO")) {
+            this.sinc.clear();
+            this.sinc.add("IDENTIFICADOR");
+            this.sinc.add("PALAVRA_RESERVADA_IF");
+            this.sinc.add("PALAVRA_RESERVADA_WHILE");
+            this.sinc.add("PALAVRA_RESERVADA_BEGIN");
+
+            erro("ERRO - 'do' esperado!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
         }
         comando();
     }
@@ -311,12 +428,60 @@ public class AnalisadorSintatico {
             expressao();
             tk = this.lex.nextToken();
             if (!tk.getToken().equals("P_FECHA")) {
-                System.out.println("ERRO - 312");
+                this.sinc.clear();
+                this.sinc.add("OP_DIV");
+                this.sinc.add("OP_OR");
+                this.sinc.add("OP_SOMA");
+                this.sinc.add("OP_SUB");
+                this.sinc.add("OP_MULT");
+                this.sinc.add("OP_REL_IGUAL");
+                this.sinc.add("OP_REL_MENOR");
+                this.sinc.add("OP_REL_MENOR_IGUAL");
+                this.sinc.add("OP_REL_MAIOR");
+                this.sinc.add("OP_REL_MAIOR_IGUAL");
+                this.sinc.add("OP_REL_DIFERENTE");
+                this.sinc.add("OP_REL_NOT");
+                this.sinc.add("OP_REL_AND");
+                this.sinc.add("PALAVRA_RESERVADA_END");
+                this.sinc.add("PALAVRA_RESERVADA_ELSE");
+                this.sinc.add("PALAVRA_RESERVADA_THEN");
+                this.sinc.add("VIRGULA");
+                this.sinc.add("PALAVRA_RESERVADA_DO");
+                this.sinc.add("PONTO_VIRGULA");
+                this.sinc.add("P_FECHA");
+
+                erro("ERRO - ')' esperado!\n"
+                        + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
             }
-        } else if (tk.getToken().equals("OP_NOT")) {
+
+        } else if (tk.getToken()
+                .equals("OP_NOT")) {
             fator();
         } else {
-            System.out.println("ERRO - 317");
+            this.sinc.clear();
+            this.sinc.add("OP_DIV");
+            this.sinc.add("OP_OR");
+            this.sinc.add("OP_SOMA");
+            this.sinc.add("OP_SUB");
+            this.sinc.add("OP_MULT");
+            this.sinc.add("OP_REL_IGUAL");
+            this.sinc.add("OP_REL_MENOR");
+            this.sinc.add("OP_REL_MENOR_IGUAL");
+            this.sinc.add("OP_REL_MAIOR");
+            this.sinc.add("OP_REL_MAIOR_IGUAL");
+            this.sinc.add("OP_REL_DIFERENTE");
+            this.sinc.add("OP_REL_NOT");
+            this.sinc.add("OP_REL_AND");
+            this.sinc.add("PALAVRA_RESERVADA_END");
+            this.sinc.add("PALAVRA_RESERVADA_ELSE");
+            this.sinc.add("PALAVRA_RESERVADA_THEN");
+            this.sinc.add("VIRGULA");
+            this.sinc.add("PALAVRA_RESERVADA_DO");
+            this.sinc.add("PONTO_VIRGULA");
+            this.sinc.add("P_FECHA");
+
+            erro("ERRO - fator não reconhecido!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
         }
 
     }
@@ -337,7 +502,8 @@ public class AnalisadorSintatico {
         if (tk.getToken().equals("IDENTIFICADOR")) {
             return;
         } else {
-            System.out.println("ERRO-IDENTIFICADOR NÃO ENCONTRADO");
+            erro("ERRO - 'IDENTIFICADOR' esperado!\n"
+                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
         }
         return;
     }

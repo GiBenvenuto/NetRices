@@ -13,22 +13,18 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.JEditorPane;
 import javax.swing.JFileChooser;
 import javax.swing.JTable;
-import javax.swing.JTextPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
-import javax.swing.text.EditorKit;
 import javax.swing.text.Style;
-import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
 
 /**
@@ -67,10 +63,11 @@ public class UIPrincipal extends javax.swing.JFrame {
         jTable1 = new javax.swing.JTable();
         scrollEntrada = new javax.swing.JScrollPane();
         entradaText = new javax.swing.JTextPane();
-        jTabbedPane1 = new javax.swing.JTabbedPane();
-        jScrollPane1 = new javax.swing.JScrollPane();
+        Tab = new javax.swing.JTabbedPane();
+        alPanel = new javax.swing.JScrollPane();
         alTable = new javax.swing.JTable();
-        jTabbedPane2 = new javax.swing.JTabbedPane();
+        asPanel = new javax.swing.JScrollPane();
+        asTextArea = new javax.swing.JTextArea();
         jPanel1 = new javax.swing.JPanel();
         analisarBtn = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
@@ -100,7 +97,7 @@ public class UIPrincipal extends javax.swing.JFrame {
         });
         scrollEntrada.setViewportView(entradaText);
 
-        jTabbedPane1.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        Tab.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 
         alTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -126,10 +123,16 @@ public class UIPrincipal extends javax.swing.JFrame {
             }
         });
         alTable.setSelectionForeground(new java.awt.Color(0, 0, 0));
-        jScrollPane1.setViewportView(alTable);
+        alPanel.setViewportView(alTable);
 
-        jTabbedPane1.addTab("Analisador Léxico", jScrollPane1);
-        jTabbedPane1.addTab("Analisador Sintático", jTabbedPane2);
+        Tab.addTab("Analisador Léxico", alPanel);
+
+        asTextArea.setEditable(false);
+        asTextArea.setColumns(20);
+        asTextArea.setRows(5);
+        asPanel.setViewportView(asTextArea);
+
+        Tab.addTab("Analisador Sintático", asPanel);
 
         jPanel1.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED, null, null, null, new java.awt.Color(102, 255, 102)));
 
@@ -181,7 +184,7 @@ public class UIPrincipal extends javax.swing.JFrame {
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 802, Short.MAX_VALUE)
+                    .addComponent(Tab, javax.swing.GroupLayout.DEFAULT_SIZE, 802, Short.MAX_VALUE)
                     .addComponent(scrollEntrada)
                     .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
@@ -194,11 +197,11 @@ public class UIPrincipal extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 129, Short.MAX_VALUE)
+                .addComponent(Tab, javax.swing.GroupLayout.DEFAULT_SIZE, 129, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
-        jTabbedPane1.getAccessibleContext().setAccessibleName("aLex");
+        Tab.getAccessibleContext().setAccessibleName("aLex");
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
@@ -217,16 +220,25 @@ public class UIPrincipal extends javax.swing.JFrame {
     }
 
     private void analisarBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_analisarBtnActionPerformed
+        boolean flagLex, flagSint;
         DefaultTableModel model = (DefaultTableModel) this.alTable.getModel();
         String entrada = this.entradaText.getText();
-        entrada = removeHTML(entrada);
-        AnalisadorLexico al =  AnalisadorLexico.getInstance();
+//        entrada = removeHTML(entrada);
+        AnalisadorLexico al = AnalisadorLexico.getInstance();
         al.lex(entrada);
         AnalisadorSintatico as = AnalisadorSintatico.getInstance();
         as.programa();
         String[][] saida = al.toInterface(entrada);
         model.setRowCount(saida.length);
         boolean erros[] = new boolean[saida.length];
+        
+        ArrayList<String> erroSint = as.getErros();
+        String sint = "";
+        for (String string : erroSint) {
+            sint += string + "\n\n";
+        }
+        
+        this.asTextArea.setText(sint);
 
         for (int i = 0; i < saida.length; i++) {
 
@@ -237,6 +249,7 @@ public class UIPrincipal extends javax.swing.JFrame {
             model.setValueAt(saida[i][4], i, 4);
 
             if (saida[i][1].contains("ERRO")) {
+                flagLex = true;
                 erros[i] = true;
             } else {
                 erros[i] = false;
@@ -254,7 +267,7 @@ public class UIPrincipal extends javax.swing.JFrame {
     }//GEN-LAST:event_analisarBtnActionPerformed
 
     private void menu_abrirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menu_abrirActionPerformed
-        JFileChooser jc = new JFileChooser("D:\\Users\\Gi\\Desktop\\Desktop\\BCC\\8SEMESTRE");
+        JFileChooser jc = new JFileChooser("D:\\Users\\Gi\\Desktop\\basicos");
         FileNameExtensionFilter filter = new FileNameExtensionFilter("txt", "txt");
         jc.setFileFilter(filter);
         int result;
@@ -339,17 +352,18 @@ public class UIPrincipal extends javax.swing.JFrame {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JTabbedPane Tab;
+    private javax.swing.JScrollPane alPanel;
     private javax.swing.JTable alTable;
     private javax.swing.JButton analisarBtn;
+    private javax.swing.JScrollPane asPanel;
+    private javax.swing.JTextArea asTextArea;
     private javax.swing.JTextPane entradaText;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
-    private javax.swing.JTabbedPane jTabbedPane1;
-    private javax.swing.JTabbedPane jTabbedPane2;
     private javax.swing.JTable jTable1;
     private javax.swing.JMenuItem menu_abrir;
     private javax.swing.JScrollPane scrollEntrada;

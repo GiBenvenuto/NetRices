@@ -10,6 +10,7 @@ import Compilador.AnalisadorSintatico;
 import java.awt.Color;
 import java.awt.Component;
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -36,6 +37,7 @@ public class UIPrincipal extends javax.swing.JFrame {
     StyleContext sc;
     Style defaultStyle;
     DefaultStyledDocument doc;
+    JFileChooser jc;
 
     /**
      * Creates new form UIPrincipal
@@ -44,6 +46,7 @@ public class UIPrincipal extends javax.swing.JFrame {
         initComponents();
         TextLineNumber tln = new TextLineNumber(this.entradaText);
         scrollEntrada.setRowHeaderView(tln);
+        this.jc = new JFileChooser("D:\\Users\\Gi\\Desktop\\basicos");
 //        sc = new StyleContext();
 //        defaultStyle = sc.getStyle(StyleContext.DEFAULT_STYLE);
 //        doc = new DefaultStyledDocument(sc);
@@ -73,7 +76,6 @@ public class UIPrincipal extends javax.swing.JFrame {
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         menu_abrir = new javax.swing.JMenuItem();
-        jMenu2 = new javax.swing.JMenu();
 
         jTable1.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -172,9 +174,6 @@ public class UIPrincipal extends javax.swing.JFrame {
 
         jMenuBar1.add(jMenu1);
 
-        jMenu2.setText("Compilar");
-        jMenuBar1.add(jMenu2);
-
         setJMenuBar(jMenuBar1);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -267,14 +266,15 @@ public class UIPrincipal extends javax.swing.JFrame {
     }//GEN-LAST:event_analisarBtnActionPerformed
 
     private void menu_abrirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_menu_abrirActionPerformed
-        JFileChooser jc = new JFileChooser("D:\\Users\\Gi\\Desktop\\basicos");
+
         FileNameExtensionFilter filter = new FileNameExtensionFilter("txt", "txt");
-        jc.setFileFilter(filter);
+        this.jc.setFileFilter(filter);
         int result;
-        result = jc.showOpenDialog(null);
+        result = this.jc.showOpenDialog(null);
 
         if (result == javax.swing.JFileChooser.APPROVE_OPTION) {
-            String filename = jc.getSelectedFile().getAbsolutePath();
+            String filename = this.jc.getSelectedFile().getAbsolutePath();
+            //jc.setCurrentDirectory(jc.getSelectedFile());
             try {
                 BufferedReader in = new BufferedReader(new FileReader(filename));
                 String entrada, line;
@@ -360,7 +360,6 @@ public class UIPrincipal extends javax.swing.JFrame {
     private javax.swing.JTextArea asTextArea;
     private javax.swing.JTextPane entradaText;
     private javax.swing.JMenu jMenu1;
-    private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane2;

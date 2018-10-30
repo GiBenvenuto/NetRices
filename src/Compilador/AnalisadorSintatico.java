@@ -17,10 +17,10 @@ public class AnalisadorSintatico {
 
     private final AnalisadorLexico lex;
     private LinkedList<String> sinc;
-    private ArrayList<String> erros;
+    private ArrayList<Erro> erros;
     private static AnalisadorSintatico instance;
 
-    public ArrayList<String> getErros() {
+    public ArrayList<Erro> getErros() {
         return erros;
     }
 
@@ -37,9 +37,9 @@ public class AnalisadorSintatico {
         return instance;
     }
 
-    private void erro(String msg) {
+    private void erro(String tipo, String msg, int lin, int col) {
 
-        this.erros.add(msg);
+        this.erros.add(new Erro(tipo, msg, lin, col, false));
 //       System.out.println(msg);
         this.lex.previousToken();
         Token tk = this.lex.nextToken();
@@ -56,8 +56,8 @@ public class AnalisadorSintatico {
         if (!tk.getToken().equals("PALAVRA_RESERVADA_PROGRAM")) {
             this.sinc.clear();
             this.sinc.add("IDENTIFICADOR");
-            erro("ERRO - palavra reservada 'program' esperado!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " palavra reservada 'program' esperado!\n",
+                    tk.getLin(), tk.getColIni());
         }
         this.sinc.clear();
         this.sinc.add("PONTO_VIRGULA");
@@ -68,18 +68,16 @@ public class AnalisadorSintatico {
             this.sinc.add("ID_TIPO");
             this.sinc.add("PALAVRA_RESERVADA_BEGIN");
             this.sinc.add("PALAVRA_RESERVADA_PROCEDURE");
-            erro("ERRO - ';' esperado!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " ';' esperado!\n",
+                    tk.getLin(), tk.getColIni());
         }
         bloco();
         tk = lex.nextToken();
-        if (tk.getToken().equals("PONTO_FIM_PROG")) {
-            this.erros.add("Fim da Análise Sintática!!");
-        } else {
+        if (!tk.getToken().equals("PONTO_FIM_PROG")) {
             this.sinc.clear();
             this.sinc.add("PONTO_FIM_PROG");
-            erro("ERRO - '.' esperado!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " '.' esperado!\n",
+                    tk.getLin(), tk.getColIni());
         }
 
     }
@@ -104,8 +102,8 @@ public class AnalisadorSintatico {
             this.sinc.add("PALAVRA_RESERVADA_WHILE");
             this.sinc.add("PALAVRA_RESERVADA_READ");
 
-            erro("ERRO - palavra reservada 'begin' esperada!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " palavra reservada 'begin' esperada!\n",
+                    tk.getLin(), tk.getColIni());
         }
         comandoComposto();
     }
@@ -120,8 +118,8 @@ public class AnalisadorSintatico {
                 this.sinc.add("PALAVRA_RESERVADA_PROCEDURE");
                 this.sinc.add("PALAVRA_RESERVADA_BEGIN");
                 this.sinc.add("ID_TIPO");
-                erro("ERRO - ';' esperado!\n"
-                        + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+                erro("SINTÁTICO", " ';' esperado!\n",
+                        tk.getLin(), tk.getColIni());
             }
             tk = this.lex.nextToken();
 
@@ -156,8 +154,8 @@ public class AnalisadorSintatico {
             if (!tk.getToken().equals("PONTO_VIRGULA")) {
                 this.sinc.clear();
                 this.sinc.add("PALAVRA_RESERVADA_BEGIN");
-                erro("ERRO - ';' esperado!\n"
-                        + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+                erro("SINTÁTICO", " ';' esperado!\n",
+                        tk.getLin(), tk.getColIni());
             }
             tk = this.lex.nextToken();
         } while (tk.getToken().equals("PALAVRA_RESERVADA_PROCEDURE"));
@@ -182,8 +180,8 @@ public class AnalisadorSintatico {
             this.sinc.add("ID_TIPO");
             this.sinc.add("PALAVRA_RESERVADA_BEGIN");
             this.sinc.add("PALAVRA_RESERVADA_PROCEDURE");
-            erro("ERRO - ';' esperado!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " ';' esperado!\n",
+                    tk.getLin(), tk.getColIni());
         }
 
     }
@@ -199,8 +197,8 @@ public class AnalisadorSintatico {
         if (!tk.getToken().equals("P_FECHA")) {
             this.sinc.clear();
             this.sinc.add("PONTO_VIRGULA");
-            erro("ERRO - ')' esperado!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " ')' esperado!\n",
+                    tk.getLin(), tk.getColIni());
         }
     }
 
@@ -214,8 +212,8 @@ public class AnalisadorSintatico {
         if (!tk.getToken().equals("DOIS_PONTOS")) {
             this.sinc.clear();
             this.sinc.add("IDENTIFICADOR");
-            erro("ERRO - ':' esperado!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " ':' esperado!\n",
+                    tk.getLin(), tk.getColIni());
         }
         tk = this.lex.nextToken();
         if (!tk.getToken().equals("ID_TIPO")) {
@@ -223,8 +221,8 @@ public class AnalisadorSintatico {
             this.sinc.add("PALAVRA_RESERVADA_VAR");
             this.sinc.add("IDENTIFICADOR");
             this.sinc.add("P_FECHA");
-            erro("ERRO - ';' esperado!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " ';' esperado!\n",
+                    tk.getLin(), tk.getColIni());
         }
 
     }
@@ -242,8 +240,8 @@ public class AnalisadorSintatico {
             this.sinc.add("PALAVRA_RESERVADA_ELSE");
             this.sinc.add("PONTO_FIM_PROG");
             this.sinc.add("PONTO_VIRGULA");
-            erro("ERRO - 'end' esperado!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " 'end' esperado!\n",
+                    tk.getLin(), tk.getColIni());
             this.lex.nextToken();
         }
 
@@ -264,8 +262,8 @@ public class AnalisadorSintatico {
             this.sinc.add("PALAVRA_RESERVADA_END");
             this.sinc.add("PALAVRA_RESERVADA_ELSE");
             this.sinc.add("PONTO_VIRGULA");
-            erro("ERRO - comando não reconhecido !\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " comando não reconhecido !\n",
+                    tk.getLin(), tk.getColIni());
         }
 
     }
@@ -290,8 +288,8 @@ public class AnalisadorSintatico {
                 this.sinc.add("PALAVRA_RESERVADA_END");
                 this.sinc.add("PALAVRA_RESERVADA_ELSE");
                 this.sinc.add("PONTO_VIRGULA");
-                erro("ERRO - ')' esperado!\n"
-                        + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+                erro("SINTÁTICO", " ')' esperado!\n",
+                        tk.getLin(), tk.getColIni());
             }
         } else if (tk.getToken().equals("PONTO_VIRGULA")
                 || tk.getToken().equals("PALAVRA_RESERVADA_END") || tk.getToken().equals("PALAVRA_RESERVADA_ELSE")) {
@@ -301,8 +299,8 @@ public class AnalisadorSintatico {
             this.sinc.add("PALAVRA_RESERVADA_END");
             this.sinc.add("PALAVRA_RESERVADA_ELSE");
             this.sinc.add("PONTO_VIRGULA");
-            erro("ERRO - comando não reconhecido!!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " comando não reconhecido!!\n",
+                    tk.getLin(), tk.getColIni());
         }
     }
 
@@ -312,8 +310,8 @@ public class AnalisadorSintatico {
         if (!tk.getToken().equals("P_ABRE")) {
             this.sinc.clear();
             this.sinc.add(tk.getToken());
-            erro("ERRO - '(' esperado!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " '(' esperado!\n",
+                    tk.getLin(), tk.getColIni());
         }
         expressao();//16   
         tk = this.lex.nextToken();
@@ -321,8 +319,8 @@ public class AnalisadorSintatico {
         if (!tk.getToken().equals("P_FECHA")) {
             this.sinc.clear();
             this.sinc.add(tk.getToken());
-            erro("ERRO - ')' esperado!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " ')' esperado!\n",
+                    tk.getLin(), tk.getColIni());
         }
 
         tk = this.lex.nextToken();
@@ -333,8 +331,8 @@ public class AnalisadorSintatico {
             this.sinc.add("PALAVRA_RESERVADA_WHILE");
             this.sinc.add("PALAVRA_RESERVADA_BEGIN");
 
-            erro("ERRO - 'then' esperado!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " 'then' esperado!\n",
+                    tk.getLin(), tk.getColIni());
         }
         comando();
         comandoCondicional2();
@@ -355,8 +353,8 @@ public class AnalisadorSintatico {
         if (!tk.getToken().equals("P_ABRE")) {
             this.sinc.clear();
             this.sinc.add(tk.getToken());
-            erro("ERRO - '(' esperado!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " '(' esperado!\n",
+                    tk.getLin(), tk.getColIni());
         }
         expressao();//16   
         tk = this.lex.nextToken();
@@ -364,8 +362,8 @@ public class AnalisadorSintatico {
         if (!tk.getToken().equals("P_FECHA")) {
             this.sinc.clear();
             this.sinc.add(tk.getToken());
-            erro("ERRO - ')' esperado!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " ')' esperado!\n",
+                    tk.getLin(), tk.getColIni());
         }
         tk = this.lex.nextToken();
         if (!tk.getToken().equals("PALAVRA_RESERVADA_DO")) {
@@ -375,8 +373,8 @@ public class AnalisadorSintatico {
             this.sinc.add("PALAVRA_RESERVADA_WHILE");
             this.sinc.add("PALAVRA_RESERVADA_BEGIN");
 
-            erro("ERRO - 'do' esperado!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " 'do' esperado!\n",
+                    tk.getLin(), tk.getColIni());
         }
         comando();
     }
@@ -450,8 +448,8 @@ public class AnalisadorSintatico {
                 this.sinc.add("PONTO_VIRGULA");
                 this.sinc.add("P_FECHA");
 
-                erro("ERRO - ')' esperado!\n"
-                        + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+                erro("SINTÁTICO", " ')' esperado!\n",
+                        tk.getLin(), tk.getColIni());
             }
 
         } else if (tk.getToken()
@@ -480,8 +478,8 @@ public class AnalisadorSintatico {
             this.sinc.add("PONTO_VIRGULA");
             this.sinc.add("P_FECHA");
 
-            erro("ERRO - fator não reconhecido!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " fator não reconhecido!\n",
+                    tk.getLin(), tk.getColIni());
         }
 
     }
@@ -502,8 +500,8 @@ public class AnalisadorSintatico {
         if (tk.getToken().equals("IDENTIFICADOR")) {
             return;
         } else {
-            erro("ERRO - 'IDENTIFICADOR' esperado!\n"
-                    + "Linha: " + tk.getLin() + " Coluna: " + tk.getColIni());
+            erro("SINTÁTICO", " 'IDENTIFICADOR' esperado!\n",
+                    tk.getLin(), tk.getColIni());
         }
         return;
     }

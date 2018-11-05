@@ -7,10 +7,10 @@ package UI;
 
 import Compilador.AnalisadorLexico;
 import Compilador.AnalisadorSintatico;
+import Compilador.Erro;
 import java.awt.Color;
 import java.awt.Component;
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
@@ -70,7 +70,7 @@ public class UIPrincipal extends javax.swing.JFrame {
         alPanel = new javax.swing.JScrollPane();
         alTable = new javax.swing.JTable();
         asPanel = new javax.swing.JScrollPane();
-        asTextArea = new javax.swing.JTextArea();
+        asTable = new javax.swing.JTable();
         jPanel1 = new javax.swing.JPanel();
         analisarBtn = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
@@ -129,12 +129,32 @@ public class UIPrincipal extends javax.swing.JFrame {
 
         Tab.addTab("Analisador Léxico", alPanel);
 
-        asTextArea.setEditable(false);
-        asTextArea.setColumns(20);
-        asTextArea.setRows(5);
-        asPanel.setViewportView(asTextArea);
+        asTable.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
 
-        Tab.addTab("Analisador Sintático", asPanel);
+            },
+            new String [] {
+                "Erro", "Mensagem", "Linha", "Coluna"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class, java.lang.String.class, java.lang.Integer.class, java.lang.Integer.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false, false, false, false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        asPanel.setViewportView(asTable);
+
+        Tab.addTab("Analisador Sintático/Semântico", asPanel);
 
         jPanel1.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED, null, null, null, new java.awt.Color(102, 255, 102)));
 
@@ -218,6 +238,35 @@ public class UIPrincipal extends javax.swing.JFrame {
         return entrada;
     }
 
+    public void tabelaAnSintatico(AnalisadorSintatico as) {
+        DefaultTableModel model = (DefaultTableModel) this.asTable.getModel();
+        ArrayList<Erro> eS = as.getErros();
+        model.setRowCount(eS.size());
+        int[] erros = new int[eS.size()];
+
+        for (int i = 0; i < eS.size(); i++) {
+            model.setValueAt(eS.get(i).getTipo(), i, 0);
+            model.setValueAt(eS.get(i).getMsg(), i, 1);
+            model.setValueAt(eS.get(i).getLin(), i, 2);
+            model.setValueAt(eS.get(i).getCol(), i, 3);
+
+            if(eS.get(i).isWarning()) {
+                erros[i] = 2;//Erro
+            } else {
+                erros[i] = 1;//Aviso
+            }
+
+        }
+
+        TableCellRenderer tcr = new tableRender(erros);
+        TableColumn column;
+        for (int i = 0; i < 4; i++) {
+            column = this.asTable.getColumnModel().getColumn(i);
+            column.setCellRenderer(tcr);
+        }
+
+    }
+
     private void analisarBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_analisarBtnActionPerformed
         boolean flagLex, flagSint;
         DefaultTableModel model = (DefaultTableModel) this.alTable.getModel();
@@ -227,17 +276,13 @@ public class UIPrincipal extends javax.swing.JFrame {
         al.lex(entrada);
         AnalisadorSintatico as = AnalisadorSintatico.getInstance();
         as.programa();
+
+        tabelaAnSintatico(as);
+
         String[][] saida = al.toInterface(entrada);
         model.setRowCount(saida.length);
-        boolean erros[] = new boolean[saida.length];
-        
-        ArrayList<String> erroSint = as.getErros();
-        String sint = "";
-        for (String string : erroSint) {
-            sint += string + "\n\n";
-        }
-        
-        this.asTextArea.setText(sint);
+
+        int erros[] = new int[saida.length];
 
         for (int i = 0; i < saida.length; i++) {
 
@@ -249,9 +294,9 @@ public class UIPrincipal extends javax.swing.JFrame {
 
             if (saida[i][1].contains("ERRO")) {
                 flagLex = true;
-                erros[i] = true;
+                erros[i] = 1;
             } else {
-                erros[i] = false;
+                erros[i] = 0;
             }
 
         }
@@ -357,7 +402,7 @@ public class UIPrincipal extends javax.swing.JFrame {
     private javax.swing.JTable alTable;
     private javax.swing.JButton analisarBtn;
     private javax.swing.JScrollPane asPanel;
-    private javax.swing.JTextArea asTextArea;
+    private javax.swing.JTable asTable;
     private javax.swing.JTextPane entradaText;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenuBar jMenuBar1;
@@ -371,9 +416,9 @@ public class UIPrincipal extends javax.swing.JFrame {
 
 class tableRender extends DefaultTableCellRenderer {
 
-    private boolean erros[];
+    private int erros[];
 
-    public tableRender(boolean[] erros) {
+    public tableRender(int[] erros) {
         this.erros = erros;
         setOpaque(true);
     }
@@ -384,13 +429,19 @@ class tableRender extends DefaultTableCellRenderer {
             Object value, boolean isSelected, boolean hasFocus,
             int row, int column) {
         super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        String token = (String) value;
-        if (this.erros[row]) {
+        if (this.erros[row] == 1) {
             if (row % 2 == 0) {
                 setBackground(Color.RED);
             } //setText(token);
             else {
-                setBackground(new Color(220, 0, 0));
+                setBackground(Color.RED.darker());
+            }
+        } else if (this.erros[row] == 2) {
+            if (row % 2 == 0) {
+                setBackground(Color.YELLOW);
+            } //setText(token);
+            else {
+                setBackground(Color.YELLOW.darker());
             }
         } else {
             setBackground(table.getBackground());

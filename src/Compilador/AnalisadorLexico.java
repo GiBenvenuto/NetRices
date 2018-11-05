@@ -26,12 +26,16 @@ public class AnalisadorLexico {
         if (this.cont < tokens.size()) {
             return this.tokens.get(this.cont++);
         } else {
-            return this.tokens.get(cont-1);
+            return this.tokens.get(cont - 1);
         }
     }
 
     public void previousToken() {
         this.cont--;
+    }
+
+    public Token currentToken() {
+        return this.tokens.get(this.cont - 1);
     }
 
     public boolean hasNext() {

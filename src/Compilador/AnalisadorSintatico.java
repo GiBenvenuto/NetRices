@@ -6,7 +6,9 @@
 package Compilador;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 
 /**
  * Melhor analisador sintático de todos os tempos. <br>
@@ -19,6 +21,8 @@ public class AnalisadorSintatico {
     private LinkedList<String> sinc;
     private ArrayList<Erro> erros;
     private static AnalisadorSintatico instance;
+    private Map<String, Escopo> escopos;
+    private String escopoAtual;
 
     public ArrayList<Erro> getErros() {
         return erros;
@@ -28,6 +32,7 @@ public class AnalisadorSintatico {
         this.lex = AnalisadorLexico.getInstance();
         this.sinc = new LinkedList();
         this.erros = new ArrayList();
+        this.escopos = new HashMap();
     }
 
     public static AnalisadorSintatico getInstance() {
@@ -50,8 +55,22 @@ public class AnalisadorSintatico {
 
     }
 
+    public void criaEscopo(String esocopo, String pai) {
+        HashMap<String, Simbolo> tab = new HashMap();
+        tab.put("var_true", new Simbolo("true", "IDENTIFICADOR", "var", "boolean", 1, true));
+        tab.put("var_false", new Simbolo("false", "IDENTIFICADOR", "var", "boolean", 0, true));
+        tab.put("proc_read", new Simbolo("read", "IDENTIFICADOR", "proc", null, null, true));
+        tab.put("proc_write", new Simbolo("write", "IDENTIFICADOR", "proc", null, null, true));
+        Escopo esc = new Escopo(pai, tab);
+        this.escopos.put(esocopo, esc);
+    }
+
     public void programa() {//1
         this.erros.clear();
+        this.escopoAtual = "GLOBAL";
+        this.escopos.clear();
+        criaEscopo("GLOBAL", null);
+        
         Token tk = lex.nextToken();
         if (!tk.getToken().equals("PALAVRA_RESERVADA_PROGRAM")) {
             this.sinc.clear();
@@ -128,9 +147,16 @@ public class AnalisadorSintatico {
     }
 
     public void declaracaoVariaveis() { //4
-        Token tk;
+        Token tk, tkAux;
         do {
             identificador();
+            tkAux = this.lex.currentToken();
+            if (verificaVar(tkAux, false)) {
+                //ERRO SEMANTICO
+                System.out.println("VAR JA EXISTE " + tkAux.getLin());
+            } else {
+                addVar(tkAux);
+            }
             tk = this.lex.nextToken();
 
         } while (tk.getToken().equals("VIRGULA"));
@@ -163,18 +189,31 @@ public class AnalisadorSintatico {
     }
 
     public void declaracaoProcedimento() { //7
-        Token tk;
+        Token tk, tkAux;
+        String nomeEsc = null;
         this.sinc.clear();
         this.sinc.add("P_ABRE");
         this.sinc.add("PONTO_VIRGULA");
         identificador();
+        tkAux = this.lex.currentToken();
+        if (verificaProc(tkAux, false)) {
+            //ERRO SEMANTICO
+            System.out.println("PROC JA EXISTE " + tkAux.getLin());
+        } else {
+            nomeEsc = tkAux.getLexema();
+            addProc(tkAux);
+        }
         tk = this.lex.nextToken();
         if (tk.getToken().equals("P_ABRE")) {
             paramentrosFormais();
             tk = this.lex.nextToken();
         }
         if (tk.getToken().equals("PONTO_VIRGULA")) {
+            String pai = this.escopoAtual;
+            this.escopoAtual = nomeEsc;
+            criaEscopo(this.escopoAtual, pai);
             bloco();
+            this.escopoAtual = pai;
         } else {
             this.sinc.clear();
             this.sinc.add("ID_TIPO");
@@ -271,9 +310,20 @@ public class AnalisadorSintatico {
     private void atr_chProc() { //12 adaptado
         Token tk = this.lex.nextToken();
         if (tk.getToken().equals("ATRIBUICAO")) {
+            this.lex.previousToken();
+            tk = this.lex.currentToken();
+            if(!verificaVar(this.lex.currentToken(), true)){
+                //ERRO SEMANTICO
+                System.out.println("NÃO DECLARADO VAR  " + tk.getLin());
+            }
+            this.lex.nextToken();
             expressao();
         } else {
             this.lex.previousToken();
+            if(!verificaProc(this.lex.currentToken(), true)){
+                //ERRO SEMANTICO
+                System.out.println("NÃO DECLARADO PROC " + this.lex.currentToken().getLin());
+            }
             chamadaProcedimento();
         }
     }
@@ -419,7 +469,10 @@ public class AnalisadorSintatico {
     private void fator() {//20
         Token tk = this.lex.nextToken();
         if (tk.getToken().equals("IDENTIFICADOR")) {
-
+            if (!verificaVar(this.lex.currentToken(), true)) {
+                //ERRO SEMANTICO
+                System.out.println("VAR NAO DECLARADA " + this.lex.currentToken().getLin());
+            }
         } else if (tk.getToken().equals("NUM_NAT")) {
 
         } else if (tk.getToken().equals("P_ABRE")) {
@@ -504,6 +557,48 @@ public class AnalisadorSintatico {
                     tk.getLin(), tk.getColIni());
         }
         return;
+    }
+
+    private boolean verificaVar(Token tk, boolean encadeada) {
+        Escopo escopo = this.escopos.get(this.escopoAtual);
+        HashMap tab = escopo.getTab();
+        boolean resp = tab.containsKey("var_" + tk.getLexema());
+        String esc = escopo.getPai();
+        if (encadeada) {
+            while (esc != null && !resp) {
+                escopo = this.escopos.get(esc);
+                tab = escopo.getTab();
+                resp = tab.containsKey("var_" + tk.getLexema());
+                esc = escopo.getPai();
+            }
+        }
+        return resp;
+    }
+
+    private boolean verificaProc(Token tk, boolean encadeada) {
+        Escopo escopo = this.escopos.get(this.escopoAtual);
+        HashMap tab = escopo.getTab();
+        boolean resp = tab.containsKey("proc_" + tk.getLexema());
+        String esc = escopo.getPai();
+        if (encadeada) {
+            while (esc != null && !resp) {
+                escopo = this.escopos.get(esc);
+                tab = escopo.getTab();
+                resp = tab.containsKey("proc_" + tk.getLexema());
+                esc = escopo.getPai();
+            }
+        }
+        return resp;
+    }
+
+    private void addVar(Token tk) {
+        HashMap tab = this.escopos.get(this.escopoAtual).getTab();
+        tab.put("var_" + tk.getLexema(), new Simbolo(tk.getLexema(), tk.getToken(), "var", null, 0, false));
+    }
+
+    private void addProc(Token tk) {
+        HashMap tab = this.escopos.get(this.escopoAtual).getTab();
+        tab.put("proc_" + tk.getLexema(), new Simbolo(tk.getLexema(), tk.getToken(), "var", null, 0, false));
     }
 
 }

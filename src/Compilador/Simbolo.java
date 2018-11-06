@@ -75,6 +75,13 @@ public class Simbolo {
         this.utilizada = utilizada;
     }
     
+    public boolean isBoolean(){
+        if (tipo.equals("boolean")) {
+            return true;
+        }
+        return false;
+    }
+    
     
     
     

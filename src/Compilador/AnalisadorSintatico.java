@@ -23,6 +23,8 @@ public class AnalisadorSintatico {
     private static AnalisadorSintatico instance;
     private Map<String, Escopo> escopos;
     private String escopoAtual;
+    private boolean isBoolean;
+    private String variavel;
 
     public ArrayList<Erro> getErros() {
         return erros;
@@ -42,7 +44,7 @@ public class AnalisadorSintatico {
         return instance;
     }
 
-    private void erro(String tipo, String msg, int lin, int col) {
+    private void erro(String tipo, String msg, Integer lin, Integer col) {
 
         this.erros.add(new Erro(tipo, msg, lin, col, false));
 //       System.out.println(msg);
@@ -53,6 +55,10 @@ public class AnalisadorSintatico {
         }
         this.lex.previousToken();
 
+    }
+
+    private void erroSemantico(String msg, Integer lin, Integer col, boolean tipoErro) {
+        this.erros.add(new Erro("SEMÂNTICO", msg, lin, col, tipoErro));
     }
 
     public void criaEscopo(String esocopo, String pai) {
@@ -70,7 +76,7 @@ public class AnalisadorSintatico {
         this.escopoAtual = "GLOBAL";
         this.escopos.clear();
         criaEscopo("GLOBAL", null);
-        
+
         Token tk = lex.nextToken();
         if (!tk.getToken().equals("PALAVRA_RESERVADA_PROGRAM")) {
             this.sinc.clear();
@@ -99,6 +105,8 @@ public class AnalisadorSintatico {
                     tk.getLin(), tk.getColIni());
         }
 
+        this.varUtilizada();
+
     }
 
     public void bloco() {//2
@@ -121,7 +129,7 @@ public class AnalisadorSintatico {
             this.sinc.add("PALAVRA_RESERVADA_WHILE");
             this.sinc.add("PALAVRA_RESERVADA_READ");
 
-            erro("SINTÁTICO", " palavra reservada 'begin' esperada!\n",
+            erro("SINTÁTICO", " Palavra reservada 'begin' esperada!\n",
                     tk.getLin(), tk.getColIni());
         }
         comandoComposto();
@@ -129,8 +137,10 @@ public class AnalisadorSintatico {
 
     public void parteDeclaracoesVariaveis() {//3
         Token tk;
+        String tipo;
         do {
-            declaracaoVariaveis();
+            tipo = this.lex.currentToken().getLexema();
+            declaracaoVariaveis(tipo);
             tk = this.lex.nextToken();
             if (!tk.getToken().equals("PONTO_VIRGULA")) {
                 this.sinc.clear();
@@ -146,16 +156,16 @@ public class AnalisadorSintatico {
         this.lex.previousToken();
     }
 
-    public void declaracaoVariaveis() { //4
+    public void declaracaoVariaveis(String tipo) { //4
         Token tk, tkAux;
         do {
             identificador();
             tkAux = this.lex.currentToken();
             if (verificaVar(tkAux, false)) {
-                //ERRO SEMANTICO
-                System.out.println("VAR JA EXISTE " + tkAux.getLin());
+                erroSemantico(" Variável já declarada!\n",
+                        tkAux.getLin(), tkAux.getColIni(), false);
             } else {
-                addVar(tkAux);
+                addVar(tkAux, tipo);
             }
             tk = this.lex.nextToken();
 
@@ -197,8 +207,8 @@ public class AnalisadorSintatico {
         identificador();
         tkAux = this.lex.currentToken();
         if (verificaProc(tkAux, false)) {
-            //ERRO SEMANTICO
-            System.out.println("PROC JA EXISTE " + tkAux.getLin());
+            erroSemantico(" Procedimento já declarado!\n",
+                    tkAux.getLin(), tkAux.getColIni(), false);
         } else {
             nomeEsc = tkAux.getLexema();
             addProc(tkAux);
@@ -312,24 +322,40 @@ public class AnalisadorSintatico {
         if (tk.getToken().equals("ATRIBUICAO")) {
             this.lex.previousToken();
             tk = this.lex.currentToken();
-            if(!verificaVar(this.lex.currentToken(), true)){
-                //ERRO SEMANTICO
-                System.out.println("NÃO DECLARADO VAR  " + tk.getLin());
+            if (!verificaVar(this.lex.currentToken(), true)) {
+                erroSemantico(" Variável não declarada!\n",
+                        tk.getLin(), tk.getColIni(), false);
+            } else {
+                this.variavel = tk.getLexema();
+                this.setUtilizada(tk, "var_");
             }
             this.lex.nextToken();
+
             expressao();
+            if (verificaTipo() != isBoolean) {
+                erroSemantico("Tipos incompatíveis", tk.getLin(), tk.getColIni(), false);
+            }
         } else {
             this.lex.previousToken();
-            if(!verificaProc(this.lex.currentToken(), true)){
-                //ERRO SEMANTICO
-                System.out.println("NÃO DECLARADO PROC " + this.lex.currentToken().getLin());
+            tk = this.lex.currentToken();
+            if (!verificaProc(tk, true)) {
+                erroSemantico(" Procedimento não declarado!\n",
+                        tk.getLin(), tk.getColIni(), false);
             }
             chamadaProcedimento();
         }
     }
 
     private void chamadaProcedimento() {//13
-        Token tk = this.lex.nextToken();
+        Token tk = this.lex.currentToken();
+        if (!verificaVar(tk, true)) {
+            erroSemantico(" Procedimento não declarado!\n",
+                    tk.getLin(), tk.getColIni(), true);
+        } else {
+            this.setUtilizada(tk, "proc_");
+        }
+
+        tk = this.lex.nextToken();
         if (tk.getToken().equals("P_ABRE")) {
             listaExpressoes();
             tk = this.lex.nextToken();
@@ -364,6 +390,9 @@ public class AnalisadorSintatico {
                     tk.getLin(), tk.getColIni());
         }
         expressao();//16   
+        if (!isBoolean) {
+            erroSemantico("A expressão deve ser booleana", tk.getLin(), tk.getColIni(), false);
+        }
         tk = this.lex.nextToken();
 
         if (!tk.getToken().equals("P_FECHA")) {
@@ -406,7 +435,10 @@ public class AnalisadorSintatico {
             erro("SINTÁTICO", " '(' esperado!\n",
                     tk.getLin(), tk.getColIni());
         }
-        expressao();//16   
+        expressao();//16  
+        if (!isBoolean) {
+            erroSemantico("A expressão deve ser booleana", tk.getLin(), tk.getColIni(), false);
+        }
         tk = this.lex.nextToken();
 
         if (!tk.getToken().equals("P_FECHA")) {
@@ -430,6 +462,7 @@ public class AnalisadorSintatico {
     }
 
     private void expressao() {//16
+        this.isBoolean = false;
         Token tk;
         expressaoSimples();
         tk = this.lex.nextToken();
@@ -449,6 +482,9 @@ public class AnalisadorSintatico {
         termo();
         tk = this.lex.nextToken();
         while (tk.getToken().equals("OP_SOMA") || tk.getToken().equals("OP_SUB") || tk.getToken().equals("OP_OR")) {
+            if (tk.getToken().equals("OP_OR")) {
+                this.isBoolean = true;
+            }
             termo();
             tk = this.lex.nextToken();
         }
@@ -462,6 +498,9 @@ public class AnalisadorSintatico {
         do {
             fator();
             tk = this.lex.nextToken();
+            if (tk.getToken().equals("OP_AND")) {
+                this.isBoolean = true;
+            }
         } while (tk.getToken().equals("OP_MULT") || tk.getToken().equals("OP_AND") || tk.getToken().equals("OP_DIV"));
         this.lex.previousToken();
     }
@@ -470,8 +509,11 @@ public class AnalisadorSintatico {
         Token tk = this.lex.nextToken();
         if (tk.getToken().equals("IDENTIFICADOR")) {
             if (!verificaVar(this.lex.currentToken(), true)) {
-                //ERRO SEMANTICO
-                System.out.println("VAR NAO DECLARADA " + this.lex.currentToken().getLin());
+                erroSemantico(" Variável não declarada!\n",
+                        tk.getLin(), tk.getColIni(), false);
+            } else {
+                this.setUtilizada(tk, "var_");
+                verificaBoolean(tk);
             }
         } else if (tk.getToken().equals("NUM_NAT")) {
 
@@ -559,6 +601,12 @@ public class AnalisadorSintatico {
         return;
     }
 
+    private void setUtilizada(Token tk, String tipo) {
+        Escopo escopo = this.escopos.get(this.escopoAtual);
+        HashMap<String, Simbolo> tab = escopo.getTab();
+        tab.get(tipo + tk.getLexema()).setUtilizada(true);
+    }
+
     private boolean verificaVar(Token tk, boolean encadeada) {
         Escopo escopo = this.escopos.get(this.escopoAtual);
         HashMap tab = escopo.getTab();
@@ -591,14 +639,44 @@ public class AnalisadorSintatico {
         return resp;
     }
 
-    private void addVar(Token tk) {
+    private void addVar(Token tk, String tipo) {
         HashMap tab = this.escopos.get(this.escopoAtual).getTab();
-        tab.put("var_" + tk.getLexema(), new Simbolo(tk.getLexema(), tk.getToken(), "var", null, 0, false));
+        tab.put("var_" + tk.getLexema(), new Simbolo(tk.getLexema(), tk.getToken(), "var", tipo, 0, false));
     }
 
     private void addProc(Token tk) {
         HashMap tab = this.escopos.get(this.escopoAtual).getTab();
         tab.put("proc_" + tk.getLexema(), new Simbolo(tk.getLexema(), tk.getToken(), "var", null, 0, false));
+    }
+
+    private void varUtilizada() {
+        for (String str1 : escopos.keySet()) {
+            HashMap<String, Simbolo> tab = this.escopos.get(str1).getTab();
+            for (String str2 : tab.keySet()) {
+                Simbolo s = tab.get(str2);
+                if (!s.isUtilizada()) {
+                    erroSemantico("O símbolo " + s.getLexema() + " no escopo " + str1 + " não foi utilazado", null, null, true);
+                }
+            }
+        }
+    }
+
+    private void verificaBoolean(Token tk) {
+        if (tk.getLexema().equals("true") || tk.getLexema().equals("false")) {
+            this.isBoolean = true;
+            return;
+        }
+        Escopo escopo = this.escopos.get(this.escopoAtual);
+        HashMap<String, Simbolo> tab = escopo.getTab();
+
+        if (tab.get("var_" + tk.getLexema()).isBoolean()) {
+            this.isBoolean = true;
+        }
+
+    }
+
+    private boolean verificaTipo() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 }

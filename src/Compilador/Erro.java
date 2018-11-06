@@ -12,11 +12,11 @@ package Compilador;
 public class Erro {
     private final String tipo;
     private final String msg;
-    private final int lin;
-    private final int col;
+    private final Integer lin;
+    private final Integer col;
     private final boolean warning;
 
-    public Erro(String tipo, String msg, int lin, int col, boolean warning) {
+    public Erro(String tipo, String msg, Integer lin, Integer col, boolean warning) {
         this.tipo = tipo;
         this.msg = msg;
         this.lin = lin;
@@ -32,11 +32,11 @@ public class Erro {
         return msg;
     }
 
-    public int getLin() {
+    public Integer getLin() {
         return lin;
     }
 
-    public int getCol() {
+    public Integer getCol() {
         return col;
     }
 

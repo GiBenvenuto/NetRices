@@ -175,6 +175,7 @@ public class AnalisadorSintatico {
 
     private void listaIdentificadores() { //5
         Token tk;
+        int cont = 0;
         do {
             identificador();
             tk = this.lex.currentToken();
@@ -182,9 +183,10 @@ public class AnalisadorSintatico {
                 erroSemantico(" Variável já declarada!\n",
                         tk.getLin(), tk.getColIni(), false);
             } else {
-                addVar(tk, null, "param");
+                addVar(tk, null, "param_" + cont);
             }
             tk = this.lex.nextToken();
+            cont++;
         } while (tk.getToken().equals("VIRGULA"));
         this.lex.previousToken();
     }
@@ -207,7 +209,8 @@ public class AnalisadorSintatico {
 
     public void declaracaoProcedimento() { //7
         Token tk, tkAux;
-        String nomeEsc = null;
+        String nomeEsc;
+        String pai = this.escopoAtual;
         this.sinc.clear();
         this.sinc.add("P_ABRE");
         this.sinc.add("PONTO_VIRGULA");
@@ -216,19 +219,21 @@ public class AnalisadorSintatico {
         if (verificaProc(tkAux, false)) {
             erroSemantico(" Procedimento já declarado!\n",
                     tkAux.getLin(), tkAux.getColIni(), false);
-        } else {
-            nomeEsc = tkAux.getLexema();
-            addProc(tkAux);
+        } else if (!this.escopoAtual.equals("GLOBAL")) {
+
+            erroSemantico("O Procedimento não pode ser declarado!\n",
+                    tkAux.getLin(), tkAux.getColIni(), false);
         }
+        nomeEsc = tkAux.getLexema();
+        addProc(tkAux);
+        criaEscopo(nomeEsc, this.escopoAtual);
+        this.escopoAtual = nomeEsc;
         tk = this.lex.nextToken();
         if (tk.getToken().equals("P_ABRE")) {
             paramentrosFormais();
             tk = this.lex.nextToken();
         }
         if (tk.getToken().equals("PONTO_VIRGULA")) {
-            String pai = this.escopoAtual;
-            this.escopoAtual = nomeEsc;
-            criaEscopo(this.escopoAtual, pai);
             bloco();
             this.escopoAtual = pai;
         } else {
@@ -342,31 +347,26 @@ public class AnalisadorSintatico {
 
             expressao();
             if (verificaTipo() != isBoolean) {
-                erroSemantico("Tipos incompatíveis", tk.getLin(), tk.getColIni(), false);
+                erroSemantico("Tipos incompatíveis na atribuição", tk.getLin(), tk.getColIni(), false);
             }
         } else {
             this.lex.previousToken();
-            tk = this.lex.currentToken();
-            if (!verificaProc(tk, true)) {
-                erroSemantico(" Procedimento não declarado!\n",
-                        tk.getLin(), tk.getColIni(), false);
-            }
             chamadaProcedimento();
         }
     }
 
     private void chamadaProcedimento() {//13
         Token tk = this.lex.currentToken();
-        if (!verificaVar(tk, true)) {
+        if (!verificaProc(tk, true)) {
             erroSemantico(" Procedimento não declarado!\n",
-                    tk.getLin(), tk.getColIni(), true);
+                    tk.getLin(), tk.getColIni(), false);
         } else {
             this.setUtilizada(tk, "proc_");
         }
-
+        Token token = tk;
         tk = this.lex.nextToken();
         if (tk.getToken().equals("P_ABRE")) {
-            listaExpressoes();
+            listaExpressoes(token);
             tk = this.lex.nextToken();
             if (!tk.getToken().equals("P_FECHA")) {
                 this.sinc.clear();
@@ -379,6 +379,7 @@ public class AnalisadorSintatico {
         } else if (tk.getToken().equals("PONTO_VIRGULA")
                 || tk.getToken().equals("PALAVRA_RESERVADA_END") || tk.getToken().equals("PALAVRA_RESERVADA_ELSE")) {
             this.lex.previousToken();
+            verificaParam(token, 0);
         } else {
             this.sinc.clear();
             this.sinc.add("PALAVRA_RESERVADA_END");
@@ -473,61 +474,80 @@ public class AnalisadorSintatico {
     private void expressao() {//16
         this.isBoolean = false;
         Token tk;
-        expressaoSimples();
+        Boolean isInt = expressaoSimples();
         tk = this.lex.nextToken();
         if (tk.getToken().contains("OP_REL")) { //relação 17
-            expressaoSimples();
+            if (expressaoSimples().booleanValue() != isInt.booleanValue()) {
+                erroSemantico("Operação com tipos incompatíveis", tk.getLin(), tk.getColIni(), false);
+            }
+            this.isBoolean = true;
         } else {
             this.lex.previousToken();
         }
 
     }
 
-    private void expressaoSimples() {//18
+    private Boolean expressaoSimples() {//18
         Token tk = this.lex.nextToken();
         if (!(tk.getToken().equals("OP_SOMA") || tk.getToken().equals("OP_SUB"))) {
             this.lex.previousToken();
         }
-        termo();
+        Boolean isInt = termo();
         tk = this.lex.nextToken();
         while (tk.getToken().equals("OP_SOMA") || tk.getToken().equals("OP_SUB") || tk.getToken().equals("OP_OR")) {
             if (tk.getToken().equals("OP_OR")) {
                 this.isBoolean = true;
             }
-            termo();
+            if ((termo().booleanValue() != isInt.booleanValue()) || (tk.getToken().equals("OP_OR") && isInt) || (!tk.getToken().equals("OP_OR") && !isInt)) {
+                erroSemantico("Operação com tipos incompatíveis", tk.getLin(), tk.getColIni(), false);
+            }
             tk = this.lex.nextToken();
         }
 
         this.lex.previousToken();
+        return isInt;
 
     }
 
-    private void termo() { //19
+    private Boolean termo() { //19
         Token tk;
-        do {
-            fator();
+        Boolean isInt = null;
+
+        isInt = fator();
+        tk = this.lex.nextToken();
+        if (tk.getToken().equals("OP_AND")) {
+            this.isBoolean = true;
+        }
+        while (tk.getToken().equals("OP_MULT") || tk.getToken().equals("OP_AND") || tk.getToken().equals("OP_DIV")) {
+            if ((fator().booleanValue() != isInt.booleanValue()) || (tk.getToken().equals("OP_AND") && isInt) || (!tk.getToken().equals("OP_AND") && !isInt)) {
+                erroSemantico("Operação com tipos incompatíveis", tk.getLin(), tk.getColIni(), false);
+            }
             tk = this.lex.nextToken();
             if (tk.getToken().equals("OP_AND")) {
                 this.isBoolean = true;
             }
-        } while (tk.getToken().equals("OP_MULT") || tk.getToken().equals("OP_AND") || tk.getToken().equals("OP_DIV"));
+        }
         this.lex.previousToken();
+        return isInt;
     }
 
-    private void fator() {//20
+    private Boolean fator() {//20
         Token tk = this.lex.nextToken();
+        Boolean isInt = null;
         if (tk.getToken().equals("IDENTIFICADOR")) {
             if (!verificaVar(this.lex.currentToken(), true)) {
                 erroSemantico(" Variável não declarada!\n",
                         tk.getLin(), tk.getColIni(), false);
             } else {
                 this.setUtilizada(tk, "var_");
-                verificaBoolean(tk);
+                isInt = !verificaBoolean(tk);
             }
         } else if (tk.getToken().equals("NUM_NAT")) {
+            isInt = true;
 
         } else if (tk.getToken().equals("P_ABRE")) {
             expressao();
+            isInt = !isBoolean;
             tk = this.lex.nextToken();
             if (!tk.getToken().equals("P_FECHA")) {
                 this.sinc.clear();
@@ -556,9 +576,9 @@ public class AnalisadorSintatico {
                         tk.getLin(), tk.getColIni());
             }
 
-        } else if (tk.getToken()
-                .equals("OP_NOT")) {
+        } else if (tk.getToken().equals("OP_NOT")) {
             fator();
+            isInt = false;
         } else {
             this.sinc.clear();
             this.sinc.add("OP_DIV");
@@ -585,15 +605,31 @@ public class AnalisadorSintatico {
             erro("SINTÁTICO", " fator não reconhecido!\n",
                     tk.getLin(), tk.getColIni());
         }
-
+        return isInt;
     }
 
-    private void listaExpressoes() {//22
+    private void listaExpressoes(Token token) {//22
         Token tk;
+        int cont = 0;
+        Boolean isInt = null;
         do {
             expressao();
             tk = this.lex.nextToken();
+            if (isInt == null) {
+                isInt = !this.isBoolean;
+            }
+            if (token.getLexema().equals("read") || token.getLexema().equals("write")) {
+                if (isInt == this.isBoolean) {
+                    erroSemantico("Tipo incompatível no parâmetro " + (cont + 1) + " do procedimento " + token.getLexema(), tk.getLin(), tk.getColIni(), false);
+                }
+            } else {
+                verificaPar(token, cont);
+            }
+            cont++;
         } while (tk.getToken().equals("VIRGULA"));
+        if (!token.getLexema().equals("read") && !token.getLexema().equals("write")) {
+            verificaParam(token, cont);
+        }
         this.lex.previousToken();
 
     }
@@ -670,17 +706,19 @@ public class AnalisadorSintatico {
         }
     }
 
-    private void verificaBoolean(Token tk) {
+    private boolean verificaBoolean(Token tk) {
         if (tk.getLexema().equals("true") || tk.getLexema().equals("false")) {
             this.isBoolean = true;
-            return;
+            return true;
         }
         Escopo escopo = this.escopos.get(this.escopoAtual);
         HashMap<String, Simbolo> tab = escopo.getTab();
 
         if (tab.get("var_" + tk.getLexema()).isBoolean()) {
             this.isBoolean = true;
+            return true;
         }
+        return false;
 
     }
 
@@ -696,12 +734,10 @@ public class AnalisadorSintatico {
             resp = tab.containsKey("var_" + this.variavel);
             esc = escopo.getPai();
         }
-        
-        if (tab.get("var_" + this.variavel).getTipo().equals("int")) {
-           return false;
+        if (esc == null && resp == false) {
+            return this.isBoolean;
         }
-        
-        return resp;
+        return (tab.get("var_" + this.variavel).getTipo().equals("boolean"));
     }
 
     private void setTipo(String lexema) {
@@ -711,6 +747,46 @@ public class AnalisadorSintatico {
             Simbolo s = tab.get(str);
             if (s.getTipo() == null) {
                 s.setTipo(lexema);
+            }
+        }
+    }
+
+    private void verificaPar(Token tk, int cont) {
+        String nomeProc = tk.getLexema();
+        Escopo esc = this.escopos.get(nomeProc);
+        if (esc == null) {
+            return;
+        }
+        HashMap<String, Simbolo> tab = esc.getTab();
+        boolean achou = false;
+        for (String str : tab.keySet()) {
+            Simbolo simb = tab.get(str);
+            if (simb.getCat().equals("param_" + cont)) {
+                if (simb.getTipo().equals("boolean") != this.isBoolean) {
+                    erroSemantico("Tipo incompatível no parâmetro " + (cont + 1), tk.getLin(), tk.getColIni(), false);
+                } else {
+                    achou = true;
+                    break;
+                }
+            }
+        }
+        if (!achou) {
+            erroSemantico("Número de parâmetros informados é maior que o númeor de parâmetros do procedimento", tk.getLin(), tk.getColIni(), false);
+
+        }
+    }
+
+    private void verificaParam(Token tk, int cont) {
+        String nomeProc = tk.getLexema();
+        Escopo esc = this.escopos.get(nomeProc);
+        if (esc == null) {
+            return;
+        }
+        HashMap<String, Simbolo> tab = esc.getTab();
+        for (String str : tab.keySet()) {
+            Simbolo simb = tab.get(str);
+            if (simb.getCat().equals("param_" + cont)) {
+                erroSemantico("Número de parâmetros informados é menor que o númeor de parâmetros do procedimento", tk.getLin(), tk.getColIni(), false);
             }
         }
     }

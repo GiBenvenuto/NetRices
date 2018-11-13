@@ -157,15 +157,15 @@ public class AnalisadorSintatico {
     }
 
     public void declaracaoVariaveis(String tipo) { //4
-        Token tk, tkAux;
+        Token tk;
         do {
             identificador();
-            tkAux = this.lex.currentToken();
-            if (verificaVar(tkAux, false)) {
+            tk = this.lex.currentToken();
+            if (verificaVar(tk, false)) {
                 erroSemantico(" Variável já declarada!\n",
-                        tkAux.getLin(), tkAux.getColIni(), false);
+                        tk.getLin(), tk.getColIni(), false);
             } else {
-                addVar(tkAux, tipo);
+                addVar(tk, tipo, "var");
             }
             tk = this.lex.nextToken();
 
@@ -177,6 +177,13 @@ public class AnalisadorSintatico {
         Token tk;
         do {
             identificador();
+            tk = this.lex.currentToken();
+            if (verificaVar(tk, false)) {
+                erroSemantico(" Variável já declarada!\n",
+                        tk.getLin(), tk.getColIni(), false);
+            } else {
+                addVar(tk, null, "param");
+            }
             tk = this.lex.nextToken();
         } while (tk.getToken().equals("VIRGULA"));
         this.lex.previousToken();
@@ -272,6 +279,8 @@ public class AnalisadorSintatico {
             this.sinc.add("P_FECHA");
             erro("SINTÁTICO", " ';' esperado!\n",
                     tk.getLin(), tk.getColIni());
+        } else {
+            setTipo(tk.getLexema());
         }
 
     }
@@ -639,9 +648,9 @@ public class AnalisadorSintatico {
         return resp;
     }
 
-    private void addVar(Token tk, String tipo) {
+    private void addVar(Token tk, String tipo, String cat) {
         HashMap tab = this.escopos.get(this.escopoAtual).getTab();
-        tab.put("var_" + tk.getLexema(), new Simbolo(tk.getLexema(), tk.getToken(), "var", tipo, 0, false));
+        tab.put("var_" + tk.getLexema(), new Simbolo(tk.getLexema(), tk.getToken(), cat, tipo, 0, false));
     }
 
     private void addProc(Token tk) {
@@ -676,7 +685,34 @@ public class AnalisadorSintatico {
     }
 
     private boolean verificaTipo() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        Escopo escopo = this.escopos.get(this.escopoAtual);
+        HashMap<String, Simbolo> tab = escopo.getTab();
+        boolean resp = tab.containsKey("var_" + this.variavel);
+        String esc = escopo.getPai();
+
+        while (esc != null && !resp) {
+            escopo = this.escopos.get(esc);
+            tab = escopo.getTab();
+            resp = tab.containsKey("var_" + this.variavel);
+            esc = escopo.getPai();
+        }
+        
+        if (tab.get("var_" + this.variavel).getTipo().equals("int")) {
+           return false;
+        }
+        
+        return resp;
+    }
+
+    private void setTipo(String lexema) {
+        Escopo escopo = this.escopos.get(this.escopoAtual);
+        HashMap<String, Simbolo> tab = escopo.getTab();
+        for (String str : tab.keySet()) {
+            Simbolo s = tab.get(str);
+            if (s.getTipo() == null) {
+                s.setTipo(lexema);
+            }
+        }
     }
 
 }

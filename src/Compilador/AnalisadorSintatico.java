@@ -96,6 +96,9 @@ public class AnalisadorSintatico {
             erro("SINTÁTICO", " ';' esperado!\n",
                     tk.getLin(), tk.getColIni());
         }
+        
+        criaEscopo("MAIN", "GLOBAL");
+        this.escopoAtual = "MAIN";
         bloco();
         tk = lex.nextToken();
         if (!tk.getToken().equals("PONTO_FIM_PROG")) {
@@ -649,7 +652,17 @@ public class AnalisadorSintatico {
     private void setUtilizada(Token tk, String tipo) {
         Escopo escopo = this.escopos.get(this.escopoAtual);
         HashMap<String, Simbolo> tab = escopo.getTab();
-        tab.get(tipo + tk.getLexema()).setUtilizada(true);
+        String esc = escopo.getPai();
+        boolean resp = tab.containsKey(tipo + tk.getLexema());
+        while (esc != null && !resp) {
+            escopo = this.escopos.get(esc);
+            tab = escopo.getTab();
+            resp = tab.containsKey(tipo + tk.getLexema());
+            esc = escopo.getPai();
+        }
+        if (resp) {
+            tab.get(tipo + tk.getLexema()).setUtilizada(true);
+        }
     }
 
     private boolean verificaVar(Token tk, boolean encadeada) {

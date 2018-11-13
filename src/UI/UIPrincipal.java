@@ -152,6 +152,7 @@ public class UIPrincipal extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
+        asTable.setSelectionForeground(new java.awt.Color(0, 204, 255));
         asPanel.setViewportView(asTable);
 
         Tab.addTab("Analisador Sintático/Semântico", asPanel);

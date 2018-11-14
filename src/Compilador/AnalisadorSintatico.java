@@ -97,8 +97,6 @@ public class AnalisadorSintatico {
                     tk.getLin(), tk.getColIni());
         }
         
-        criaEscopo("MAIN", "GLOBAL");
-        this.escopoAtual = "MAIN";
         bloco();
         tk = lex.nextToken();
         if (!tk.getToken().equals("PONTO_FIM_PROG")) {

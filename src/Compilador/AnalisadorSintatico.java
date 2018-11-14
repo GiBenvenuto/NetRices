@@ -25,6 +25,7 @@ public class AnalisadorSintatico {
     private String escopoAtual;
     private boolean isBoolean;
     private String variavel;
+    private int cont;
 
     public ArrayList<Erro> getErros() {
         return erros;
@@ -96,7 +97,7 @@ public class AnalisadorSintatico {
             erro("SINTÁTICO", " ';' esperado!\n",
                     tk.getLin(), tk.getColIni());
         }
-        
+
         bloco();
         tk = lex.nextToken();
         if (!tk.getToken().equals("PONTO_FIM_PROG")) {
@@ -176,7 +177,6 @@ public class AnalisadorSintatico {
 
     private void listaIdentificadores() { //5
         Token tk;
-        int cont = 0;
         do {
             identificador();
             tk = this.lex.currentToken();
@@ -184,10 +184,10 @@ public class AnalisadorSintatico {
                 erroSemantico(" Variável já declarada!\n",
                         tk.getLin(), tk.getColIni(), false);
             } else {
-                addVar(tk, null, "param_" + cont);
+                addVar(tk, null, "param_" + this.cont);
             }
             tk = this.lex.nextToken();
-            cont++;
+            this.cont++;
         } while (tk.getToken().equals("VIRGULA"));
         this.lex.previousToken();
     }
@@ -250,6 +250,7 @@ public class AnalisadorSintatico {
 
     public void paramentrosFormais() { //8
         Token tk;
+        this.cont = 0;
         secaoParametrosFormais();
         tk = this.lex.nextToken();
         while (tk.getToken().equals("PONTO_VIRGULA")) {
@@ -611,7 +612,7 @@ public class AnalisadorSintatico {
 
     private void listaExpressoes(Token token) {//22
         Token tk;
-        int cont = 0;
+        int contParam = 0;
         Boolean isInt = null;
         do {
             expressao();
@@ -621,15 +622,15 @@ public class AnalisadorSintatico {
             }
             if (token.getLexema().equals("read") || token.getLexema().equals("write")) {
                 if (isInt == this.isBoolean) {
-                    erroSemantico("Tipo incompatível no parâmetro " + (cont + 1) + " do procedimento " + token.getLexema(), tk.getLin(), tk.getColIni(), false);
+                    erroSemantico("Tipo incompatível no parâmetro " + (contParam + 1) + " do procedimento " + token.getLexema(), tk.getLin(), tk.getColIni(), false);
                 }
             } else {
-                verificaPar(token, cont);
+                verificaPar(token, contParam);
             }
-            cont++;
+            contParam++;
         } while (tk.getToken().equals("VIRGULA"));
         if (!token.getLexema().equals("read") && !token.getLexema().equals("write")) {
-            verificaParam(token, cont);
+            verificaParam(token, contParam);
         }
         this.lex.previousToken();
 
@@ -724,6 +725,14 @@ public class AnalisadorSintatico {
         }
         Escopo escopo = this.escopos.get(this.escopoAtual);
         HashMap<String, Simbolo> tab = escopo.getTab();
+        boolean resp = tab.containsKey("var_" + tk.getLexema());
+        String pai = escopo.getPai();
+        while (!resp && pai != null) {
+            escopo = this.escopos.get(pai);
+            pai = escopo.getPai();
+            tab = escopo.getTab();
+            resp = tab.containsKey("var_" + tk.getLexema());
+        }
 
         if (tab.get("var_" + tk.getLexema()).isBoolean()) {
             this.isBoolean = true;
@@ -773,10 +782,10 @@ public class AnalisadorSintatico {
         for (String str : tab.keySet()) {
             Simbolo simb = tab.get(str);
             if (simb.getCat().equals("param_" + cont)) {
+                achou = true;
                 if (simb.getTipo().equals("boolean") != this.isBoolean) {
                     erroSemantico("Tipo incompatível no parâmetro " + (cont + 1), tk.getLin(), tk.getColIni(), false);
                 } else {
-                    achou = true;
                     break;
                 }
             }

@@ -582,6 +582,7 @@ public class AnalisadorSintatico {
             fator();
             isInt = false;
         } else {
+            isInt = false;
             this.sinc.clear();
             this.sinc.add("OP_DIV");
             this.sinc.add("OP_OR");

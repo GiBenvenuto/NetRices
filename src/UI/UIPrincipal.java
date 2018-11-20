@@ -8,6 +8,7 @@ package UI;
 import Compilador.AnalisadorLexico;
 import Compilador.AnalisadorSintatico;
 import Compilador.Erro;
+import Compilador.Interpretador;
 import java.awt.Color;
 import java.awt.Component;
 import java.io.BufferedReader;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -38,6 +40,7 @@ public class UIPrincipal extends javax.swing.JFrame {
     Style defaultStyle;
     DefaultStyledDocument doc;
     JFileChooser jc;
+    String nomeProg;
 
     /**
      * Creates new form UIPrincipal
@@ -47,6 +50,7 @@ public class UIPrincipal extends javax.swing.JFrame {
         TextLineNumber tln = new TextLineNumber(this.entradaText);
         scrollEntrada.setRowHeaderView(tln);
         this.jc = new JFileChooser("D:\\Users\\Gi\\Desktop\\basicos");
+        this.nomeProg = null;
 //        sc = new StyleContext();
 //        defaultStyle = sc.getStyle(StyleContext.DEFAULT_STYLE);
 //        doc = new DefaultStyledDocument(sc);
@@ -73,6 +77,7 @@ public class UIPrincipal extends javax.swing.JFrame {
         asTable = new javax.swing.JTable();
         jPanel1 = new javax.swing.JPanel();
         analisarBtn = new javax.swing.JButton();
+        executarBtn = new javax.swing.JButton();
         jMenuBar1 = new javax.swing.JMenuBar();
         jMenu1 = new javax.swing.JMenu();
         menu_abrir = new javax.swing.JMenuItem();
@@ -159,10 +164,17 @@ public class UIPrincipal extends javax.swing.JFrame {
 
         jPanel1.setBorder(new javax.swing.border.SoftBevelBorder(javax.swing.border.BevelBorder.RAISED, null, null, null, new java.awt.Color(102, 255, 102)));
 
-        analisarBtn.setText("Analisar");
+        analisarBtn.setText("Compilar");
         analisarBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 analisarBtnActionPerformed(evt);
+            }
+        });
+
+        executarBtn.setText("Executar");
+        executarBtn.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                executarBtnActionPerformed(evt);
             }
         });
 
@@ -173,13 +185,17 @@ public class UIPrincipal extends javax.swing.JFrame {
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(analisarBtn)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(executarBtn)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(analisarBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 30, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                    .addComponent(analisarBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 30, Short.MAX_VALUE)
+                    .addComponent(executarBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -277,6 +293,7 @@ public class UIPrincipal extends javax.swing.JFrame {
         al.lex(entrada);
         AnalisadorSintatico as = AnalisadorSintatico.getInstance();
         as.programa();
+        this.nomeProg = as.getNomeProg();
 
         tabelaAnSintatico(as);
 
@@ -361,6 +378,16 @@ public class UIPrincipal extends javax.swing.JFrame {
 
     }//GEN-LAST:event_entradaTextKeyTyped
 
+    private void executarBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_executarBtnActionPerformed
+        if (this.nomeProg != null) {
+            Interpretador it = new Interpretador();
+            it.leByteCode(nomeProg);
+            it.interpreta();
+        }else{
+            JOptionPane.showMessageDialog(null, "Não é possível executar esse programa!");
+        }
+    }//GEN-LAST:event_executarBtnActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -405,6 +432,7 @@ public class UIPrincipal extends javax.swing.JFrame {
     private javax.swing.JScrollPane asPanel;
     private javax.swing.JTable asTable;
     private javax.swing.JTextPane entradaText;
+    private javax.swing.JButton executarBtn;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel jPanel1;

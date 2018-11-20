@@ -430,7 +430,7 @@ public class AnalisadorSintatico {
             erro("SINTÁTICO", " '(' esperado!\n",
                     tk.getLin(), tk.getColIni());
         }
-        int sai = this.labelCont;
+        int sai = this.labelCont++;
         expressao();//16  
         this.executavel.add(new Codigo(null, "DSVF", "L_" + sai));
 
@@ -563,10 +563,19 @@ public class AnalisadorSintatico {
 
     private Boolean expressaoSimples() {//18
         Token tk = this.lex.nextToken();
+        boolean inv = false;
         if (!(tk.getToken().equals("OP_SOMA") || tk.getToken().equals("OP_SUB"))) {
             this.lex.previousToken();
+
+        } else {
+            if (tk.getToken().equals("OP_SUB")) {
+                inv = true;
+            }
         }
         Boolean isInt = termo();
+        if (inv) {
+            this.executavel.add(new Codigo(null, "INVR", null));
+        }
         tk = this.lex.nextToken();
         while (tk.getToken().equals("OP_SOMA") || tk.getToken().equals("OP_SUB") || tk.getToken().equals("OP_OR")) {
             if (tk.getToken().equals("OP_OR")) {

@@ -983,4 +983,10 @@ public class AnalisadorSintatico {
 
         }
     }
+
+    public String getNomeProg() {
+        return nomeProg;
+    }
+    
+    
 }

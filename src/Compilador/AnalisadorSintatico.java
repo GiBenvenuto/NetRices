@@ -94,7 +94,9 @@ public class AnalisadorSintatico {
         this.escopoAtual = "GLOBAL";
         criaEscopo("GLOBAL", null);
         this.executavel.add(new Codigo(null, "INPP", null));
-
+        if (lex.isEmpty()) {
+            return;
+        }
         Token tk = lex.nextToken();
         if (!tk.getToken().equals("PALAVRA_RESERVADA_PROGRAM")) {
             this.sinc.clear();
@@ -515,8 +517,8 @@ public class AnalisadorSintatico {
                     tk.getLin(), tk.getColIni());
         }
         comando();
-        this.executavel.add(new Codigo(null, "DSVS", "L_" + sai));
-        this.executavel.add(new Codigo("L_" + volta, "NADA", null));
+        this.executavel.add(new Codigo(null, "DSVS", "L_" + volta));
+        this.executavel.add(new Codigo("L_" + sai, "NADA", null));
     }
 
     private void expressao() {//16
@@ -731,6 +733,7 @@ public class AnalisadorSintatico {
                     if (s == null) {
                         this.erroSemantico("A variável não foi declarada", tk.getLin(), tk.getColIni(), false);
                     } else {
+                        this.setUtilizada(tk, "var_");
                         this.executavel.add(new Codigo(null, "LEIT", null));
                         this.executavel.add(new Codigo(null, "ARMZ", s.getValor().toString()));
                     }
@@ -987,6 +990,5 @@ public class AnalisadorSintatico {
     public String getNomeProg() {
         return nomeProg;
     }
-    
-    
+
 }

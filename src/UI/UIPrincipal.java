@@ -380,9 +380,10 @@ public class UIPrincipal extends javax.swing.JFrame {
 
     private void executarBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_executarBtnActionPerformed
         if (this.nomeProg != null) {
-            Interpretador it = new Interpretador();
+            Interpretador it = new Interpretador(this);
             it.leByteCode(nomeProg);
-            it.interpreta();
+            Thread t = new Thread(it);
+            t.start();
         }else{
             JOptionPane.showMessageDialog(null, "Não é possível executar esse programa!");
         }

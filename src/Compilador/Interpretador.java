@@ -15,27 +15,28 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 /**
  *
  * @author Gi
  */
-public class Interpretador {
+public class Interpretador implements Runnable {
 
     private int i, s;
     private List<Codigo> cod;
     private List<Integer> dados;
     private Saida saida;
 
-    public Interpretador() {
+    public Interpretador(JFrame pai) {
         this.cod = new ArrayList();
         this.dados = new ArrayList();
         this.i = 0;
         this.s = -1;
-        this.saida = new Saida();
-        this.saida.setVisible(true);
+        this.saida = new Saida(pai, false);
         this.saida.getEntrada().setEditable(false);
+        this.saida.setVisible(true);
 
     }
 
@@ -50,8 +51,8 @@ public class Interpretador {
                     str = new String[3];
                     str[0] = strAux[0];
                     str[1] = strAux[1];
-                    str[2] = "";    
-                }else{
+                    str[2] = "";
+                } else {
                     str = strAux;
                 }
                 this.cod.add(new Codigo(str[0], str[1], str[2]));
@@ -123,8 +124,12 @@ public class Interpretador {
                 case "DIVI":
                     a = this.dados.get(this.s - 1);
                     b = this.dados.get(this.s);
-
-                    this.dados.add(this.s - 1, a / b);
+                    try {
+                        this.dados.add(this.s - 1, a / b);
+                    } catch (ArithmeticException e) {
+                        this.addText("AVISO: Divisão por 0.");
+                        this.dados.add(this.s - 1, 0);
+                    }
                     this.s--;
                     break;
                 case "MODI":
@@ -258,13 +263,28 @@ public class Interpretador {
                 case "LEIT":
                     this.s++;
                     str = JOptionPane.showInputDialog("Digite a entrada:");
+                    if (str != null) {
+                        switch (str) {
+                            case "true":
+                                str = "1";
+                                break;
+                            case "false":
+                                str = "0";
+                                break;
+                        }
+                    }
                     this.addText("Entrada do usuário:");
-                    this.addText(str);
-                    this.dados.add(this.s, Integer.valueOf(str));
+                    try {
+                        this.dados.add(this.s, Integer.valueOf(str));
+                        this.addText(str);
+                    } catch (NumberFormatException | NullPointerException _np) {
+                        this.dados.add(this.s, 0);
+                        this.addText("Entrada não reconhecida: Valor alterado para 0");
+                    }
                     break;
 
             }
-            
+
             this.i++;
         }
     }
@@ -284,9 +304,14 @@ public class Interpretador {
         }
         return false;
     }
-    
-    private void addText(String text){
+
+    private void addText(String text) {
         String str = this.saida.getEntrada().getText();
         this.saida.getEntrada().setText(str + text + "\n");
+    }
+
+    @Override
+    public void run() {
+        this.interpreta();
     }
 }

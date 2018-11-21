@@ -9,24 +9,20 @@ import javax.swing.JTextArea;
 
 /**
  *
- * @author Gi
+ * @author fabio
  */
-public class Saida extends javax.swing.JFrame {
+public class Saida extends javax.swing.JDialog {
 
     /**
      * Creates new form Saida
      */
-    public Saida() {
+    public Saida(java.awt.Frame parent, boolean modal) {
+        super(parent, modal);
         initComponents();
     }
-
     public JTextArea getEntrada() {
         return entrada;
     }
-
-    
-    
-
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -51,7 +47,7 @@ public class Saida extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 600, Short.MAX_VALUE)
+                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 380, Short.MAX_VALUE)
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -92,10 +88,17 @@ public class Saida extends javax.swing.JFrame {
         }
         //</editor-fold>
 
-        /* Create and display the form */
+        /* Create and display the dialog */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new Saida().setVisible(true);
+                Saida dialog = new Saida(new javax.swing.JFrame(), true);
+                dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+                    @Override
+                    public void windowClosing(java.awt.event.WindowEvent e) {
+                        System.exit(0);
+                    }
+                });
+                dialog.setVisible(true);
             }
         });
     }

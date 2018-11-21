@@ -35,7 +35,11 @@ public class AnalisadorLexico {
     }
 
     public Token currentToken() {
-        return this.tokens.get(this.cont - 1);
+        if (this.cont > 0) {
+            return this.tokens.get(this.cont - 1);
+        }
+        return this.tokens.get(this.cont);
+
     }
 
     public boolean hasNext() {
@@ -110,6 +114,9 @@ public class AnalisadorLexico {
     }
 
     public void lex(String entrada) {
+        if (entrada.equals("")) {
+            return;
+        }
         char caracter;
         short comentario = 0;//0 - nada, 1 - linha, 2 - bloco
         String auxTokens = "";
@@ -262,5 +269,9 @@ public class AnalisadorLexico {
         }
 
         return tk;
+    }
+
+    boolean isEmpty() {
+        return this.tokens.isEmpty();
     }
 }

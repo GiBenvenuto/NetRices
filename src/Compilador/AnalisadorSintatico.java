@@ -650,7 +650,17 @@ public class AnalisadorSintatico {
                 this.setUtilizada(tk, "var_");
                 isInt = !verificaBoolean(tk);
                 Simbolo s = this.getVar(tk);
-                this.executavel.add(new Codigo(null, "CRVL", s.getValor().toString()));
+                switch (s.getLexema()) {
+                    case "true":
+                        this.executavel.add(new Codigo(null, "CRCT", "1"));
+                        break;
+                    case "false":
+                        this.executavel.add(new Codigo(null, "CRCT", "0"));
+                        break;
+                    default:
+                        this.executavel.add(new Codigo(null, "CRVL", s.getValor().toString()));
+
+                }
             }
         } else if (tk.getToken().equals("NUM_NAT")) {
             isInt = true;

@@ -69,8 +69,8 @@ public class Interpretador {
     public void interpreta() {
         String str;
         Integer a, b;
-        boolean aux = false;
-        while (!aux) {
+        boolean aux = true;
+        while (aux) {
             Codigo cod = this.cod.get(this.i);
 
             switch (cod.getCod()) {
@@ -85,7 +85,7 @@ public class Interpretador {
                     this.s = this.s - Integer.parseInt(cod.getArg());
                     break;
                 case "PARA":
-                    aux = true;
+                    aux = false;
                     break;
                 case "CRCT":
                     this.s++;
@@ -240,7 +240,7 @@ public class Interpretador {
 
                 case "DSVF":
                     b = this.dados.get(this.s);
-                    if (parseBoolean(b)) {
+                    if (!parseBoolean(b)) {
                         this.i = getLabel(cod.getArg()) - 1;
                     }
                     break;

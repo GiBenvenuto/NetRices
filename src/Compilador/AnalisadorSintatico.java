@@ -486,8 +486,8 @@ public class AnalisadorSintatico {
             erro("SINTÁTICO", " '(' esperado!\n",
                     tk.getLin(), tk.getColIni());
         }
-        int volta = this.labelCont;
-        this.executavel.add(new Codigo("L_" + this.labelCont++, "NADA", null));
+        int volta = this.labelCont++;
+        this.executavel.add(new Codigo("L_" + volta, "NADA", null));
         expressao();//16
 
         int sai = this.labelCont++;
@@ -515,8 +515,8 @@ public class AnalisadorSintatico {
                     tk.getLin(), tk.getColIni());
         }
         comando();
-        this.executavel.add(new Codigo(null, "DSVS", "L_" + sai));
-        this.executavel.add(new Codigo("L_" + volta, "NADA", null));
+        this.executavel.add(new Codigo(null, "DSVS", "L_" + volta));
+        this.executavel.add(new Codigo("L_" + sai, "NADA", null));
     }
 
     private void expressao() {//16
